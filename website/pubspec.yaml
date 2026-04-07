@@ -19,6 +19,7 @@ dependencies:
   permission_handler:
   http:
   flutter_dotenv:
+  image:
 
   camera:
   path_provider:
