@@ -1,0 +1,42 @@
+name: website
+description: "A new Flutter project."
+publish_to: "none"
+
+version: 1.0.0+1
+
+environment:
+  sdk: ^3.9.2
+
+dependencies:
+  flutter:
+    sdk: flutter
+  supabase_flutter:
+  image_picker:
+  file_picker:
+  path:
+  uuid:
+  geolocator:
+  permission_handler:
+  http:
+  flutter_dotenv:
+
+  camera:
+  path_provider:
+  shimmer:
+  cupertino_icons:
+  image_picker_for_web:
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^5.0.0
+
+flutter:
+  uses-material-design: true
+
+  # IMPORTANT: Specify exact asset paths
+  assets:
+    - assets/labels/class_names.txt
+    - assets/metadata/medicinal_plants_data.json
+    - assets/models/ugandan_plants_model_scripted.pt
+    - assets/ # This includes all other assets in the assets folder

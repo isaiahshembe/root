@@ -1,0 +1,140 @@
+{
+  "prunus_africana": {
+    "commonName": "African Cherry (Omugusha)",
+    "family": "Rosaceae",
+    "medicinalProperties": [
+      "🌿 Prostate health - Used for benign prostatic hyperplasia treatment",
+      "🌿 Anti-inflammatory - Reduces inflammation and swelling",
+      "🌿 Malaria treatment - Bark extracts used in traditional medicine",
+      "🌿 Urinary health - Treats urinary disorders"
+    ],
+    "preparation": [
+      "Bark is harvested and dried",
+      "Ground into powder for tea or capsules",
+      "Decoction prepared by boiling bark in water"
+    ],
+    "culturalContext": {
+      "location": "Bwindi Forest Ecosystem, southwestern Uganda",
+      "significance": "Sacred species in Bakiga culture, used for over 200 years",
+      "traditionalKnowledge": "Harvesting rituals performed by community elders during full moon",
+      "communities": "Bakiga, Batwa, Banyarwanda"
+    },
+    "conservation": "Vulnerable - Protected under CITES Appendix II",
+    "seasonalInfo": "Best harvested during dry season (June-August)"
+  },
+  "moringa_oleifera": {
+    "commonName": "Moringa (Mlonge)",
+    "family": "Moringaceae",
+    "medicinalProperties": [
+      "🌿 Nutritional supplement - Rich in vitamins A, C, E, and minerals",
+      "🌿 Anti-inflammatory - Reduces arthritis and joint pain",
+      "🌿 Blood sugar regulation - Helps manage diabetes",
+      "🌿 Wound healing - Leaf paste applied topically"
+    ],
+    "preparation": [
+      "Leaves dried and powdered for long-term storage",
+      "Fresh leaves boiled as tea",
+      "Seed oil extracted for topical applications"
+    ],
+    "culturalContext": {
+      "location": "Busoga and Buganda regions, eastern Uganda",
+      "significance": "Essential in postpartum recovery and child nutrition",
+      "traditionalKnowledge": "Leaves are pounded with groundnuts for nutritional porridge",
+      "communities": "Basoga, Baganda, Iteso"
+    },
+    "conservation": "Least Concern - Widely cultivated",
+    "seasonalInfo": "Harvested year-round, best during rainy season"
+  },
+  "artemisia_annua": {
+    "commonName": "Sweet Wormwood (Aruwiri)",
+    "family": "Asteraceae",
+    "medicinalProperties": [
+      "🌿 Malaria treatment - Contains artemisinin (WHO approved)",
+      "🌿 Fever reduction - Traditional fever management",
+      "🌿 Immune booster - Strengthens natural defenses",
+      "🌿 Anti-parasitic - Treats intestinal worms"
+    ],
+    "preparation": [
+      "Dried leaves brewed as tea",
+      "Cold water maceration for 6-12 hours",
+      "Leaves pounded and mixed with honey"
+    ],
+    "culturalContext": {
+      "location": "Throughout Uganda, cultivated in home gardens",
+      "significance": "Promoted by Ministry of Health for malaria prevention",
+      "traditionalKnowledge": "Brewed as tea by community health workers",
+      "communities": "All Ugandan communities"
+    },
+    "conservation": "Cultivated - Not threatened",
+    "seasonalInfo": "Harvested before flowering (3-4 months after planting)"
+  },
+  "warburgia_ugandensis": {
+    "commonName": "Ugandan Greenheart (Mukuzanyana)",
+    "family": "Canellaceae",
+    "medicinalProperties": [
+      "🌿 Cold and flu - Chewed bark for respiratory infections",
+      "🌿 Antifungal - Treats skin conditions and ringworm",
+      "🌿 Digestive health - Relieves stomach ulcers",
+      "🌿 Toothache - Bark as natural anesthetic"
+    ],
+    "preparation": [
+      "Fresh bark chewed directly",
+      "Bark decoction for respiratory issues",
+      "Pounded leaves for poultices"
+    ],
+    "culturalContext": {
+      "location": "Mabira Forest Reserve, central Uganda",
+      "significance": "Kept in Baganda homes as preventive medicine",
+      "traditionalKnowledge": "Bark harvesting follows lunar calendar",
+      "communities": "Baganda, Basoga"
+    },
+    "conservation": "Endangered - Overharvested in wild",
+    "seasonalInfo": "Sustainable harvest during dry season"
+  },
+  "vernonia_amygdalina": {
+    "commonName": "Bitter Leaf (Mululuza)",
+    "family": "Asteraceae",
+    "medicinalProperties": [
+      "🌿 Malaria - Strong antimalarial properties",
+      "🌿 Digestive aid - Treats stomach problems and worms",
+      "🌿 Liver health - Protects and detoxifies liver",
+      "🌿 Diabetes - Lowers blood sugar naturally"
+    ],
+    "preparation": [
+      "Fresh leaves squeezed in water",
+      "Leaf decoction drunk as tea",
+      "Young leaves eaten as vegetable"
+    ],
+    "culturalContext": {
+      "location": "Throughout Uganda, especially western region",
+      "significance": "Essential in traditional ceremonies and cleansing rituals",
+      "traditionalKnowledge": "Bitter taste indicates medicinal potency",
+      "communities": "Banyankole, Bakiga, Baganda"
+    },
+    "conservation": "Least Concern - Widely available",
+    "seasonalInfo": "Harvested year-round"
+  },
+  "aloe_vera": {
+    "commonName": "Aloe (Kigaji)",
+    "family": "Asphodelaceae",
+    "medicinalProperties": [
+      "🌿 Skin healing - Treats burns, wounds, and skin infections",
+      "🌿 Digestive health - Relieves constipation",
+      "🌿 Immune booster - Strengthens immune system",
+      "🌿 Hair care - Promotes hair growth"
+    ],
+    "preparation": [
+      "Gel extracted from fresh leaves",
+      "Applied topically for skin conditions",
+      "Mixed with honey for internal use"
+    ],
+    "culturalContext": {
+      "location": "Cultivated countrywide, native to dry areas",
+      "significance": "First aid plant kept in many homesteads",
+      "traditionalKnowledge": "Leaf pulp mixed with turmeric for wound healing",
+      "communities": "All Ugandan communities"
+    },
+    "conservation": "Cultivated - Secure",
+    "seasonalInfo": "Harvested year-round"
+  }
+}
