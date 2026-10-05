@@ -27,20 +27,26 @@ class _VlmidentificationState extends State<Vlmidentification>
   bool _hasResults = false;
   String _debugInfo = '';
   bool _apiReady = false;
+  bool _geminiFallbackEnabled = false;
+  bool _usedGeminiFallback = false;
+  String _questionType = 'general';
 
   late AnimationController _animationController;
   late Animation<double> _progressAnimation;
   Map<String, dynamic> _identificationResults = {};
 
-  // API Configuration
-  // Get your free API key from: https://aistudio.google.com/app/apikey
-  final String _geminiApiKey =
-      'AIzaSyAYMfnPhfsr7NSPjRIjbNnvaGSQ1fYOyFo'; // Replace with your key
-  final String _geminiApiUrl =
-      'https://generativelanguage.googleapis.com/v1/models/gemini-pro-vision:generateContent';
+  static const String _geminiApiKey = String.fromEnvironment('GEMINI_API_KEY');
+  static const String _huggingFaceApiUrl =
+      'https://andro777-med-tourism-vlm.hf.space/gradio_api/predict';
 
-  // Alternative: Use a backend proxy if needed
-  final String _proxyUrl = ''; // Optional: Your backend proxy URL
+  static const Map<String, String> _questionTypes = {
+    'general': 'General',
+    'caption': 'Caption',
+    'culture': 'Culture',
+    'material': 'Material',
+    'primary_use': 'Primary use',
+    'cultural_significance': 'Cultural significance',
+  };
 
   List<String>? _classNames;
   Map<String, dynamic>? _medicinalData;
@@ -106,25 +112,11 @@ class _VlmidentificationState extends State<Vlmidentification>
         _medicinalData = _getBuiltInMedicinalDatabase();
       }
 
-      // Check API key
-      if (_geminiApiKey == 'YOUR_GEMINI_API_KEY_HERE') {
-        setState(() {
-          _debugInfo =
-              '⚠️ API Key Required\n\n'
-              'Please add your Gemini API key to use the AI vision model.\n\n'
-              'Get a free key at: https://aistudio.google.com/app/apikey\n\n'
-              'Once added, the app will identify plants using Google\'s Gemini Vision AI.';
-        });
-        _apiReady = false;
-      } else {
-        _apiReady = true;
-        setState(() {
-          _debugInfo =
-              '✅ AI Vision Model Ready!\n\n'
-              'Using Google Gemini Vision AI to identify Ugandan medicinal plants.\n'
-              'Upload a clear photo of a plant for instant identification.';
-        });
-      }
+      _apiReady = true;
+      setState(() {
+        _debugInfo =
+            '✅ Hugging Face VLM ready. Choose a question and upload an image.';
+      });
     } catch (e) {
       debugPrint('Initialization error: $e');
       setState(() {
@@ -132,29 +124,6 @@ class _VlmidentificationState extends State<Vlmidentification>
             '❌ Initialization error: $e\n\n'
             'Please check your internet connection and try again.';
       });
-    }
-  }
-
-  Future<void> _listAvailableModels() async {
-    // Use v1beta to list the newest models
-    final url = Uri.parse(
-      'https://generativelanguage.googleapis.com/v1beta/models?key=$_geminiApiKey',
-    );
-
-    try {
-      final response = await http.get(url);
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        print("--- YOUR AVAILABLE MODELS ---");
-        // Look for models containing "flash" or "pro" that support generateContent
-        for (var model in data['models']) {
-          if (model['supportedGenerationMethods'].contains('generateContent')) {
-            print("✅ ${model['name']}");
-          }
-        }
-      }
-    } catch (e) {
-      print("Error listing models: $e");
     }
   }
 
@@ -257,7 +226,7 @@ class _VlmidentificationState extends State<Vlmidentification>
                   _identificationResults = {};
                   _debugInfo =
                       '✅ Image loaded: ${file.name}\n'
-                      'Click "Identify Plant" to analyze with Gemini AI';
+                      'Choose a question and analyze with the Hugging Face VLM.';
                 });
               }
               _selectedImage = file;
@@ -282,7 +251,7 @@ class _VlmidentificationState extends State<Vlmidentification>
             _identificationResults = {};
             _debugInfo =
                 '✅ Image loaded: ${image.name}\n'
-                'Click "Identify Plant" to analyze with Gemini AI';
+                'Choose a question and analyze with the Hugging Face VLM.';
           });
         }
       }
@@ -302,15 +271,11 @@ class _VlmidentificationState extends State<Vlmidentification>
       return;
     }
 
-    if (!_apiReady) {
-      _showSnackBar('Please add your Gemini API key first', Colors.orange);
-      return;
-    }
-
     setState(() {
       _isProcessing = true;
       _hasResults = false;
-      _debugInfo = '🔄 Analyzing image with Gemini Vision AI...';
+      _usedGeminiFallback = false;
+      _debugInfo = '🔄 Sending image to the Hugging Face VLM...';
     });
 
     _animationController.reset();
@@ -322,60 +287,47 @@ class _VlmidentificationState extends State<Vlmidentification>
 
       if (mounted) {
         setState(() {
-          _debugInfo = '🔍 Sending image to Gemini AI for analysis...';
+          _debugInfo =
+              '🔍 Sending image and question to the Hugging Face VLM...';
         });
       }
 
-      // Get image bytes
       final imageBytes = await _getImageBytes();
       if (imageBytes == null) {
         throw Exception('Failed to read image data');
       }
 
-      // Base64 encode the image
       final base64Image = base64Encode(imageBytes);
-      final mimeType = kIsWeb ? 'image/jpeg' : 'image/jpeg';
+      final mimeType = _getImageMimeType(imageBytes);
+      String answer;
+      Map<String, dynamic>? geminiResult;
+      try {
+        answer = await _callHuggingFaceAPI(
+          base64Image,
+          mimeType,
+          _questionType,
+        );
+      } catch (error) {
+        if (!_geminiFallbackEnabled || _geminiApiKey.isEmpty) rethrow;
 
-      // Prepare the prompt for Ugandan context
-      final prompt = '''
-You are an expert in Ugandan medicinal plants and traditional medicine. Analyze this plant image and provide a comprehensive identification following this exact JSON structure:
-
-{
-  "scientificName": "Scientific name of the plant",
-  "commonName": "Common name in English and local Ugandan names",
-  "family": "Plant family",
-  "confidence": "Confidence score as number between 70-99",
-  "medicinalProperties": ["List of 4-6 key medicinal properties with emojis"],
-  "preparation": ["List of 3-5 traditional preparation methods used in Uganda"],
-  "culturalContext": {
-    "location": "Regions in Uganda where found",
-    "communities": "Specific Ugandan communities that use it",
-    "significance": "Cultural and medicinal significance",
-    "traditionalKnowledge": "Traditional knowledge from Ugandan healers"
-  },
-  "conservation": "Conservation status in Uganda",
-  "seasonalInfo": "Best harvesting season in Ugandan context"
-}
-
-If you cannot identify the specific plant, provide your best guess based on visible features and include "confidence": "Low" in the response.
+        _usedGeminiFallback = true;
+        final prompt =
+            '''
+You are an expert in Ugandan cultural heritage and medicinal plants. Analyze the image and answer this request: ${_questionTypes[_questionType]}.
+Provide a concise, evidence-based answer. State uncertainty rather than inventing details.
 ''';
-
-      // Call Gemini API
-      final response = await _callGeminiAPI(base64Image, mimeType, prompt);
-
-      await Future.delayed(const Duration(milliseconds: 300));
-      if (mounted) _animationController.value = 0.5;
-
-      if (mounted) {
-        setState(() {
-          _debugInfo = '📊 Processing AI response...';
-        });
+        final response = await _callGeminiAPI(base64Image, mimeType, prompt);
+        answer = response;
+        geminiResult = _parseGeminiResponse(response);
       }
 
-      // Parse the response
-      final analysisResult = _parseGeminiResponse(response);
+      final analysisResult = geminiResult ?? <String, dynamic>{};
+      analysisResult['provider'] = _usedGeminiFallback
+          ? 'Gemini (experimental fallback)'
+          : 'Hugging Face VLM';
+      analysisResult['questionType'] = _questionType;
+      analysisResult['answer'] = answer;
 
-      // Add analysis ID
       analysisResult['analysisId'] =
           'UGA-${DateTime.now().year}-${DateTime.now().millisecondsSinceEpoch % 10000}';
 
@@ -384,7 +336,7 @@ If you cannot identify the specific plant, provide your best guess based on visi
 
       if (mounted) {
         setState(() {
-          _debugInfo = '📚 Retrieving additional medicinal information...';
+          _debugInfo = '📚 Finalizing the model response...';
         });
       }
 
@@ -396,16 +348,11 @@ If you cannot identify the specific plant, provide your best guess based on visi
           _identificationResults = analysisResult;
           _isProcessing = false;
           _hasResults = true;
-          _debugInfo =
-              '✅ Analysis complete! Identified: ${analysisResult['commonName']}\n'
-              'Confidence: ${analysisResult['confidence']}%';
+          _debugInfo = '✅ Analysis complete via ${analysisResult['provider']}';
         });
       }
 
-      _showSnackBar(
-        '✅ Plant identified: ${analysisResult['commonName']}',
-        Colors.green,
-      );
+      _showSnackBar('Analysis complete', Colors.green);
     } catch (e) {
       debugPrint('Processing error: $e');
       if (mounted) {
@@ -413,8 +360,8 @@ If you cannot identify the specific plant, provide your best guess based on visi
           _isProcessing = false;
           _debugInfo =
               '❌ Error during identification: $e\n\n'
-              'Please check your API key and internet connection.\n'
-              'Make sure the image shows the plant clearly.';
+              'Check your internet connection and try again.\n'
+              'The hosted inference Space may be unavailable or starting up.';
         });
         _showSnackBar('Error identifying plant: $e', Colors.red);
       }
@@ -437,6 +384,70 @@ If you cannot identify the specific plant, provide your best guess based on visi
       return await (_selectedImage as File).readAsBytes();
     }
     return null;
+  }
+
+  String _getImageMimeType(Uint8List bytes) {
+    if (bytes.length >= 8 &&
+        bytes[0] == 0x89 &&
+        bytes[1] == 0x50 &&
+        bytes[2] == 0x4E &&
+        bytes[3] == 0x47) {
+      return 'image/png';
+    }
+    if (bytes.length >= 3 &&
+        bytes[0] == 0xFF &&
+        bytes[1] == 0xD8 &&
+        bytes[2] == 0xFF) {
+      return 'image/jpeg';
+    }
+    if (bytes.length >= 12 &&
+        String.fromCharCodes(bytes.sublist(0, 4)) == 'RIFF' &&
+        String.fromCharCodes(bytes.sublist(8, 12)) == 'WEBP') {
+      return 'image/webp';
+    }
+    throw Exception(
+      'Unsupported image format. Please choose PNG, JPEG, or WebP.',
+    );
+  }
+
+  Future<String> _callHuggingFaceAPI(
+    String base64Image,
+    String mimeType,
+    String questionType,
+  ) async {
+    final response = await http
+        .post(
+          Uri.parse(_huggingFaceApiUrl),
+          headers: {'Content-Type': 'application/json'},
+          body: jsonEncode({
+            'data': ['data:$mimeType;base64,$base64Image', questionType],
+          }),
+        )
+        .timeout(const Duration(seconds: 120));
+
+    if (response.statusCode != 200) {
+      throw Exception(
+        'Hugging Face inference failed (${response.statusCode}): ${response.body}',
+      );
+    }
+
+    final decoded = jsonDecode(response.body);
+    if (decoded is! Map<String, dynamic> ||
+        decoded['data'] is! List ||
+        (decoded['data'] as List).isEmpty ||
+        (decoded['data'] as List).first is! String) {
+      throw const FormatException(
+        'Unexpected response from the Hugging Face VLM.',
+      );
+    }
+
+    final answer = (decoded['data'] as List).first as String;
+    if (answer.trim().isEmpty) {
+      throw const FormatException(
+        'The Hugging Face VLM returned an empty answer.',
+      );
+    }
+    return answer;
   }
 
   Future<String> _callGeminiAPI(
@@ -626,27 +637,6 @@ If you cannot identify the specific plant, provide your best guess based on visi
                             color: Colors.grey.shade700,
                           ),
                         ),
-                        if (_debugInfo.contains('API Key') &&
-                            _geminiApiKey == 'YOUR_GEMINI_API_KEY_HERE')
-                          Padding(
-                            padding: const EdgeInsets.only(top: 12),
-                            child: ElevatedButton.icon(
-                              onPressed: () async {
-                                await _showApiKeyDialog();
-                              },
-                              icon: const Icon(Icons.vpn_key, size: 16),
-                              label: const Text('Add API Key'),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.blue.shade700,
-                                foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 8,
-                                ),
-                                textStyle: const TextStyle(fontSize: 12),
-                              ),
-                            ),
-                          ),
                       ],
                     ),
                   ),
@@ -671,69 +661,6 @@ If you cannot identify the specific plant, provide your best guess based on visi
             ),
           );
         },
-      ),
-    );
-  }
-
-  Future<void> _showApiKeyDialog() async {
-    final TextEditingController apiKeyController = TextEditingController();
-
-    return showDialog(
-      context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Add Gemini API Key'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text(
-              'Get your free API key from Google AI Studio:',
-              style: TextStyle(fontSize: 12),
-            ),
-            const SizedBox(height: 8),
-            GestureDetector(
-              onTap: () {
-                // Open URL - you'll need url_launcher package
-              },
-              child: Text(
-                'https://aistudio.google.com/app/apikey',
-                style: TextStyle(
-                  color: Colors.blue.shade700,
-                  decoration: TextDecoration.underline,
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            TextField(
-              controller: apiKeyController,
-              decoration: const InputDecoration(
-                labelText: 'API Key',
-                border: OutlineInputBorder(),
-                hintText: 'Enter your Gemini API key',
-              ),
-              obscureText: true,
-            ),
-          ],
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: () {
-              // In a real app, you'd save this securely
-              // For demo, we'll just show a message
-              ScaffoldMessenger.of(context).showSnackBar(
-                const SnackBar(
-                  content: Text('API key would be saved here'),
-                  duration: Duration(seconds: 2),
-                ),
-              );
-              Navigator.pop(context);
-            },
-            child: const Text('Save'),
-          ),
-        ],
       ),
     );
   }
@@ -786,9 +713,44 @@ If you cannot identify the specific plant, provide your best guess based on visi
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    'Powered by Google Gemini Vision AI\n'
-                    'Upload a photo of any plant to identify it and learn about its medicinal properties, traditional uses, and cultural significance in Ugandan communities.',
+                    'Powered by the hosted Ugandan Artifact VLM.\n'
+                    'Upload an image and ask about its caption, culture, material, primary use, or cultural significance.',
                     style: TextStyle(color: Colors.green.shade700, height: 1.4),
+                  ),
+                  const SizedBox(height: 16),
+                  DropdownButtonFormField<String>(
+                    value: _questionType,
+                    decoration: const InputDecoration(
+                      labelText: 'Question type',
+                      border: OutlineInputBorder(),
+                    ),
+                    items: _questionTypes.entries
+                        .map(
+                          (entry) => DropdownMenuItem(
+                            value: entry.key,
+                            child: Text(entry.value),
+                          ),
+                        )
+                        .toList(),
+                    onChanged: (value) {
+                      if (value != null) {
+                        setState(() => _questionType = value);
+                      }
+                    },
+                  ),
+                  SwitchListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: const Text('Gemini experimental fallback'),
+                    subtitle: Text(
+                      _geminiApiKey.isEmpty
+                          ? 'Not configured. Configure only for development; production keys belong on a server.'
+                          : 'Try Gemini only if the Hugging Face Space request fails.',
+                    ),
+                    value: _geminiFallbackEnabled,
+                    onChanged: _geminiApiKey.isEmpty
+                        ? null
+                        : (enabled) =>
+                              setState(() => _geminiFallbackEnabled = enabled),
                   ),
                   if (kIsWeb)
                     Padding(
@@ -809,7 +771,7 @@ If you cannot identify the specific plant, provide your best guess based on visi
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
-                                '✓ Works on web - Uses Google\'s Gemini AI for accurate plant identification',
+                                'Inference runs remotely through the Hugging Face Space',
                                 style: TextStyle(
                                   fontSize: 12,
                                   color: Colors.blue.shade700,
@@ -914,7 +876,7 @@ If you cannot identify the specific plant, provide your best guess based on visi
                                 ),
                                 const SizedBox(width: 4),
                                 Text(
-                                  'AI-Powered by Gemini Vision',
+                                  'Hugging Face VLM',
                                   style: TextStyle(
                                     fontSize: 11,
                                     color: Colors.blue.shade700,
@@ -990,10 +952,8 @@ If you cannot identify the specific plant, provide your best guess based on visi
                     : const Icon(Icons.auto_awesome),
                 label: Text(
                   _isProcessing
-                      ? 'Analyzing with Gemini AI...'
-                      : (_apiReady
-                            ? 'Identify Plant with AI'
-                            : 'Add API Key to Start'),
+                      ? 'Analyzing image...'
+                      : (_apiReady ? 'Analyze image' : 'Inference unavailable'),
                   style: const TextStyle(
                     fontSize: 16,
                     fontWeight: FontWeight.bold,
@@ -1038,7 +998,9 @@ If you cannot identify the specific plant, provide your best guess based on visi
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  'Gemini AI Analysis',
+                  _usedGeminiFallback
+                      ? 'Gemini Experimental Fallback'
+                      : 'Hugging Face VLM Analysis',
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.bold,
                     color: Colors.green.shade800,
@@ -1050,7 +1012,7 @@ If you cannot identify the specific plant, provide your best guess based on visi
             _buildProcessingStep(
               1,
               'Image Upload',
-              'Sending image to Gemini Vision AI...',
+              'Sending image to hosted inference...',
             ),
             _buildProcessingStep(
               2,
@@ -1148,6 +1110,43 @@ If you cannot identify the specific plant, provide your best guess based on visi
   Widget _buildResultsSection() {
     final plant = _identificationResults;
     if (plant.isEmpty) return const SizedBox();
+
+    if (plant['answer'] is String) {
+      return Card(
+        elevation: 4,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        color: Colors.white,
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                _usedGeminiFallback
+                    ? 'Gemini experimental fallback'
+                    : 'Hugging Face VLM answer',
+                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.green.shade800,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text('Question: ${_questionTypes[plant['questionType']]}'),
+              const SizedBox(height: 16),
+              SelectableText(
+                plant['answer'] as String,
+                style: const TextStyle(fontSize: 16, height: 1.5),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Provider: ${plant['provider']}  |  ID: ${plant['analysisId']}',
+                style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
 
     return Card(
       elevation: 4,
@@ -1489,7 +1488,7 @@ If you cannot identify the specific plant, provide your best guess based on visi
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
-                          'Powered by Google Gemini Vision AI',
+                          'Powered by a fine-tuned BLIP VLM hosted on Hugging Face',
                           style: TextStyle(
                             fontWeight: FontWeight.bold,
                             color: Colors.blue.shade800,
@@ -1500,7 +1499,7 @@ If you cannot identify the specific plant, provide your best guess based on visi
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    'This app uses Google\'s advanced Gemini Vision model to analyze plant images and provide accurate identification with Ugandan cultural context.',
+                    'Images are sent to the Hugging Face Space for remote image question-answering. Select a question type to guide the model.',
                     style: TextStyle(fontSize: 13, color: Colors.grey.shade700),
                   ),
                 ],
@@ -1514,7 +1513,7 @@ If you cannot identify the specific plant, provide your best guess based on visi
             const SizedBox(height: 12),
             _buildInfoBullet(
               'Step 2: AI Analysis',
-              'Gemini Vision AI analyzes the image and identifies the plant species',
+              'The VLM answers the selected question about the image',
             ),
             const SizedBox(height: 12),
             _buildInfoBullet(
