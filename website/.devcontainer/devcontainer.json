@@ -1,0 +1,13 @@
+{
+  "name": "Flutter Codespace",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+  "postCreateCommand": "sudo apt-get update && sudo apt-get install -y curl git unzip xz-utils zip libglu1-mesa && if [ ! -d \"$HOME/flutter\" ]; then git clone https://github.com/flutter/flutter.git --depth 1 -b stable $HOME/flutter; fi && echo 'export PATH=\"$HOME/flutter/bin:$PATH\"' >> $HOME/.bashrc",
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "Dart-Code.flutter",
+        "Dart-Code.dart-code"
+      ]
+    }
+  }
+}
