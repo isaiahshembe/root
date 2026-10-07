@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:typed_data';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
 
@@ -55,8 +56,10 @@ class SupabaseService {
         await _client.storage
             .from('heritage-images')
             .uploadBinary(filePath, bytes);
-
-        print('Upload successful');
+      } else if (imageFile is XFile) {
+        await _client.storage
+            .from('heritage-images')
+            .uploadBinary(filePath, await imageFile.readAsBytes());
       } else {
         await _client.storage
             .from('heritage-images')
@@ -159,6 +162,12 @@ class Crowdsource extends StatefulWidget {
 }
 
 class _CrowdsourceState extends State<Crowdsource> {
+  static const _paper = Color(0xFFF5F2E9);
+  static const _forest = Color(0xFF24473C);
+  static const _clay = Color(0xFFB85E43);
+  static const _ink = Color(0xFF242B27);
+  static const _rule = Color(0xFFD9D5C9);
+
   final SupabaseService _supabase = SupabaseService();
   final _latitudeCtrl = TextEditingController();
   final _longitudeCtrl = TextEditingController();
@@ -170,6 +179,7 @@ class _CrowdsourceState extends State<Crowdsource> {
   String? _selectedSiteId;
   dynamic _selectedImage;
   String? _imageUrl;
+  Uint8List? _imagePreviewBytes;
   bool _isUploading = false;
   bool _isSubmitting = false;
   bool _isLoading = true;
@@ -267,18 +277,18 @@ class _CrowdsourceState extends State<Crowdsource> {
 
   Future<void> _pickImage() async {
     try {
-      final input = html.FileUploadInputElement()..accept = 'image/*';
-      input.click();
+      if (kIsWeb) {
+        final input = html.FileUploadInputElement()..accept = 'image/*';
+        input.click();
 
-      input.onChange.listen((event) {
-        final files = input.files;
-        if (files != null && files.isNotEmpty) {
+        input.onChange.listen((event) {
+          final files = input.files;
+          if (files == null || files.isEmpty) return;
           final file = files[0];
           if (file.size > 5 * 1024 * 1024) {
             _showSnackBar('Image too large (max 5MB)', Colors.orange);
             return;
           }
-
           if (!file.type.startsWith('image/')) {
             _showSnackBar('Please select an image file', Colors.orange);
             return;
@@ -291,10 +301,23 @@ class _CrowdsourceState extends State<Crowdsource> {
             }
             _imageUrl = html.Url.createObjectUrl(file);
           });
-
-          _showSnackBar('Image loaded: ${file.name}', Colors.green);
+        });
+      } else {
+        final image = await ImagePicker().pickImage(
+          source: ImageSource.gallery,
+          imageQuality: 85,
+        );
+        if (image == null) return;
+        final bytes = await image.readAsBytes();
+        if (bytes.length > 5 * 1024 * 1024) {
+          _showSnackBar('Image too large (max 5MB)', Colors.orange);
+          return;
         }
-      });
+        setState(() {
+          _selectedImage = image;
+          _imagePreviewBytes = bytes;
+        });
+      }
     } catch (e) {
       print('Error picking image: $e');
       _showSnackBar('Error picking image: $e', Colors.red);
@@ -308,6 +331,7 @@ class _CrowdsourceState extends State<Crowdsource> {
     setState(() {
       _selectedImage = null;
       _imageUrl = null;
+      _imagePreviewBytes = null;
     });
   }
 
@@ -411,38 +435,22 @@ class _CrowdsourceState extends State<Crowdsource> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: _paper,
       body: LayoutBuilder(
         builder: (context, constraints) {
-          final isSmall = constraints.maxWidth < 1200;
           return SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
-            child: isSmall
-                ? Column(
-                    children: [
-                      _buildForm(),
-                      const SizedBox(height: 24),
-                      _buildSteps(),
-                      const SizedBox(height: 24),
-                      _buildSites(),
-                    ],
-                  )
-                : Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(flex: 2, child: _buildForm()),
-                      const SizedBox(width: 24),
-                      Expanded(
-                        flex: 1,
-                        child: Column(
-                          children: [
-                            _buildSteps(),
-                            const SizedBox(height: 24),
-                            _buildSites(),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
+            padding: EdgeInsets.fromLTRB(
+              constraints.maxWidth < 600 ? 20 : 40,
+              28,
+              constraints.maxWidth < 600 ? 20 : 40,
+              40,
+            ),
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 760),
+                child: _buildForm(),
+              ),
+            ),
           );
         },
       ),
@@ -450,559 +458,291 @@ class _CrowdsourceState extends State<Crowdsource> {
   }
 
   Widget _buildForm() {
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Colors.green.shade50, Colors.green.shade100],
-                ),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Column(
-                children: [
-                  Text(
-                    'Multimodal Crowdsourcing Interface',
-                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: Colors.green.shade800,
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Submit botanical artifacts with cultural narratives from Uganda\'s heritage sites.',
-                    style: TextStyle(color: Colors.green.shade700),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
-
-            _sectionTitle('Plant Image Upload *', Icons.image),
-            const SizedBox(height: 12),
-            GestureDetector(
-              onTap: _pickImage,
-              child: Container(
-                height: 200,
-                decoration: BoxDecoration(
-                  border: Border.all(color: Colors.green.shade200, width: 2),
-                  borderRadius: BorderRadius.circular(12),
-                  color: Colors.green.shade50,
-                ),
-                child: _imageUrl == null
-                    ? Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            Icons.cloud_upload,
-                            size: 48,
-                            color: Colors.green.shade400,
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            'Click to upload plant image',
-                            style: TextStyle(color: Colors.green.shade600),
-                          ),
-                          Text(
-                            'JPG, PNG (Max 5MB)',
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Colors.green.shade400,
-                            ),
-                          ),
-                        ],
-                      )
-                    : Stack(
-                        fit: StackFit.expand,
-                        children: [
-                          ClipRRect(
-                            borderRadius: BorderRadius.circular(12),
-                            child: Image.network(_imageUrl!, fit: BoxFit.cover),
-                          ),
-                          Positioned(
-                            top: 8,
-                            right: 8,
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: Colors.black.withOpacity(0.6),
-                                shape: BoxShape.circle,
-                              ),
-                              child: IconButton(
-                                icon: const Icon(
-                                  Icons.close,
-                                  color: Colors.white,
-                                ),
-                                onPressed: _removeImage,
-                              ),
-                            ),
-                          ),
-                          if (_isUploading)
-                            Container(
-                              decoration: BoxDecoration(
-                                color: Colors.black.withOpacity(0.5),
-                                borderRadius: BorderRadius.circular(12),
-                              ),
-                              child: const Center(
-                                child: CircularProgressIndicator(),
-                              ),
-                            ),
-                        ],
-                      ),
-              ),
-            ),
-            const SizedBox(height: 24),
-
-            _sectionTitle('Heritage Site Location *', Icons.location_on),
-            const SizedBox(height: 12),
-            Container(
-              decoration: BoxDecoration(
-                border: Border.all(color: Colors.green.shade200),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: DropdownButtonFormField<String>(
-                      value: _selectedSiteId,
-                      isExpanded: true,
-                      decoration: const InputDecoration(
-                        border: InputBorder.none,
-                        hintText: 'Select a heritage site...',
-                      ),
-                      items: _heritageSites.map((s) {
-                        return DropdownMenuItem<String>(
-                          value: s.id,
-                          child: Row(
-                            children: [
-                              Icon(
-                                Icons.forest,
-                                size: 20,
-                                color: Colors.green.shade600,
-                              ),
-                              const SizedBox(width: 8),
-                              Flexible(
-                                child: Text(
-                                  s.name,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                              const SizedBox(width: 8),
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 8,
-                                  vertical: 2,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: Colors.green.shade100,
-                                  borderRadius: BorderRadius.circular(12),
-                                ),
-                                child: Text(
-                                  '${s.artifacts}',
-                                  style: TextStyle(
-                                    fontSize: 12,
-                                    color: Colors.green.shade700,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ),
-                        );
-                      }).toList(),
-                      onChanged: (v) => setState(() => _selectedSiteId = v),
-                    ),
-                  ),
-                  Tooltip(
-                    message: 'Add new heritage site',
-                    child: InkWell(
-                      onTap: _showAddSiteDialog,
-                      child: Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: Colors.green.shade50,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Icon(
-                          Icons.add_location_alt,
-                          color: Colors.green.shade700,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            Row(
-              children: [
-                Expanded(
-                  child: TextField(
-                    controller: _latitudeCtrl,
-                    keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true,
-                    ),
-                    decoration: InputDecoration(
-                      labelText: 'GPS Latitude',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      prefixIcon: Icon(
-                        Icons.pin_drop,
-                        color: Colors.green.shade600,
-                      ),
-                      hintText: 'e.g., 0.3136',
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: TextField(
-                    controller: _longitudeCtrl,
-                    keyboardType: const TextInputType.numberWithOptions(
-                      decimal: true,
-                    ),
-                    decoration: InputDecoration(
-                      labelText: 'GPS Longitude',
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      prefixIcon: Icon(
-                        Icons.pin_drop,
-                        color: Colors.green.shade600,
-                      ),
-                      hintText: 'e.g., 32.5811',
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-              decoration: BoxDecoration(
-                color: Colors.blue.shade50,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Row(
-                children: [
-                  Icon(Icons.info, size: 16, color: Colors.blue.shade700),
-                  const SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'Enter coordinates manually. You can get coordinates from Google Maps.',
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.blue.shade700,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
-
-            _sectionTitle('Cultural Narrative *', Icons.description),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _narrativeCtrl,
-              maxLines: 4,
-              decoration: InputDecoration(
-                hintText:
-                    'Describe cultural significance, traditional stories, or indigenous knowledge...',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
-
-            _sectionTitle('Traditional Preparation', Icons.medical_services),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _traditionalCtrl,
-              maxLines: 3,
-              decoration: InputDecoration(
-                hintText:
-                    'How is this plant prepared and used in traditional medicine?',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-            ),
-            const SizedBox(height: 24),
-
-            _sectionTitle('Your Name (Optional)', Icons.person),
-            const SizedBox(height: 12),
-            TextField(
-              controller: _userNameCtrl,
-              decoration: InputDecoration(
-                hintText: 'Tourist, guide, healer, or researcher name',
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                prefixIcon: Icon(
-                  Icons.person_outline,
-                  color: Colors.green.shade600,
-                ),
-              ),
-            ),
-            const SizedBox(height: 32),
-
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: (_isSubmitting || _isUploading) ? null : _submitForm,
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green.shade700,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                ),
-                child: (_isSubmitting || _isUploading)
-                    ? const SizedBox(
-                        height: 20,
-                        width: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation(Colors.white),
-                        ),
-                      )
-                    : const Text(
-                        'Submit to Knowledge Graph',
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSteps() {
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Icon(
-                  Icons.auto_awesome,
-                  color: Colors.green.shade700,
-                  size: 28,
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  'VLM-Assisted Processing',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.green.shade800,
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            _step(
-              '1',
-              'Multimodal Ingestion',
-              'Image, GPS metadata, and text collected',
-            ),
-            _step(
-              '2',
-              'Cryptographic Hashing',
-              'Provenance tracking for epistemic trust',
-            ),
-            _step(
-              '3',
-              'VLM Semantic Extraction',
-              'Entities extracted from media',
-            ),
-            _step(
-              '4',
-              'Ontological Alignment',
-              'Cross-referenced with botanical vocabularies',
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _step(String step, String title, String desc) => Padding(
-    padding: const EdgeInsets.symmetric(vertical: 8),
-    child: Row(
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Container(
-          width: 32,
-          height: 32,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: Colors.green.shade600,
-          ),
-          child: Center(
-            child: Text(
-              step,
-              style: const TextStyle(
-                color: Colors.white,
-                fontWeight: FontWeight.bold,
-              ),
-            ),
+        Text(
+          'FIELD NOTES  /  UGANDA',
+          style: TextStyle(
+            color: _clay,
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
           ),
         ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                title,
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: Colors.green.shade800,
-                ),
-              ),
-              Text(
-                desc,
-                style: TextStyle(fontSize: 12, color: Colors.green.shade600),
-              ),
-            ],
+        const SizedBox(height: 12),
+        Text(
+          'Share what you know',
+          style: TextStyle(
+            color: _forest,
+            fontFamily: 'Georgia',
+            fontSize: 32,
+            fontWeight: FontWeight.w700,
           ),
         ),
-      ],
-    ),
-  );
-
-  Widget _buildSites() {
-    if (_isLoading) {
-      return Card(
-        child: Padding(
-          padding: const EdgeInsets.all(40),
-          child: Center(
-            child: Column(
-              children: [
-                const CircularProgressIndicator(),
-                const SizedBox(height: 12),
-                Text(
-                  'Loading heritage sites...',
-                  style: TextStyle(color: Colors.green.shade600),
-                ),
-              ],
-            ),
-          ),
+        const SizedBox(height: 6),
+        const Text(
+          'Help preserve the knowledge held in your community.',
+          style: TextStyle(color: _ink, fontSize: 15, height: 1.45),
         ),
-      );
-    }
-
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      child: Padding(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
+        const SizedBox(height: 24),
+        const Divider(height: 1, color: _rule),
+        const SizedBox(height: 28),
+        _sectionTitle('01', 'Place'),
+        const SizedBox(height: 14),
+        Row(
           children: [
-            Row(
-              children: [
-                Icon(Icons.forest, color: Colors.green.shade700, size: 28),
-                const SizedBox(width: 8),
-                Text(
-                  'Heritage Sites',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: Colors.green.shade800,
-                  ),
+            Expanded(
+              child: DropdownButtonFormField<String>(
+                initialValue: _selectedSiteId,
+                isExpanded: true,
+                decoration: _fieldDecoration(
+                  _isLoading ? 'Loading sites...' : 'Heritage site',
                 ),
-              ],
+                items: _heritageSites.map((site) {
+                  return DropdownMenuItem<String>(
+                    value: site.id,
+                    child: Text(site.name, overflow: TextOverflow.ellipsis),
+                  );
+                }).toList(),
+                onChanged: (value) => setState(() => _selectedSiteId = value),
+              ),
             ),
-            const SizedBox(height: 16),
-            ListView.separated(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemCount: _heritageSites.length,
-              separatorBuilder: (_, __) =>
-                  Divider(color: Colors.green.shade100),
-              itemBuilder: (_, i) {
-                final site = _heritageSites[i];
-                final isSelected = _selectedSiteId == site.id;
-                return Container(
-                  decoration: BoxDecoration(
-                    color: isSelected
-                        ? Colors.green.shade50
-                        : Colors.transparent,
-                    borderRadius: BorderRadius.circular(8),
-                  ),
-                  child: ListTile(
-                    leading: CircleAvatar(
-                      backgroundColor: Colors.green.shade100,
-                      child: Icon(Icons.forest, color: Colors.green.shade700),
-                    ),
-                    title: Text(
-                      site.name,
-                      style: TextStyle(
-                        fontWeight: isSelected
-                            ? FontWeight.bold
-                            : FontWeight.w600,
+            const SizedBox(width: 8),
+            IconButton.filledTonal(
+              tooltip: 'Add a heritage site',
+              onPressed: _showAddSiteDialog,
+              style: IconButton.styleFrom(
+                backgroundColor: const Color(0xFFE5E9DF),
+                foregroundColor: _forest,
+                fixedSize: const Size(56, 56),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(6),
+                ),
+              ),
+              icon: const Icon(Icons.add_location_alt_outlined),
+            ),
+          ],
+        ),
+        const SizedBox(height: 14),
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final latitude = TextField(
+              controller: _latitudeCtrl,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+                signed: true,
+              ),
+              decoration: _fieldDecoration('Latitude', hint: '0.3136'),
+            );
+            final longitude = TextField(
+              controller: _longitudeCtrl,
+              keyboardType: const TextInputType.numberWithOptions(
+                decimal: true,
+                signed: true,
+              ),
+              decoration: _fieldDecoration('Longitude', hint: '32.5811'),
+            );
+            if (constraints.maxWidth < 360) {
+              return Column(
+                children: [latitude, const SizedBox(height: 10), longitude],
+              );
+            }
+            return Row(
+              children: [
+                Expanded(child: latitude),
+                const SizedBox(width: 12),
+                Expanded(child: longitude),
+              ],
+            );
+          },
+        ),
+        const SizedBox(height: 28),
+        _sectionTitle('02', 'Photo'),
+        const SizedBox(height: 14),
+        GestureDetector(
+          onTap: _selectedImage == null ? _pickImage : null,
+          child: Container(
+            height: 156,
+            width: double.infinity,
+            decoration: BoxDecoration(
+              color: const Color(0xFFECE9DF),
+              border: Border.all(color: _rule),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: _selectedImage == null
+                ? Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.add_a_photo_outlined,
+                        color: _forest,
+                        size: 28,
                       ),
-                    ),
-                    trailing: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.green.shade100,
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        '${site.artifacts}',
+                      const SizedBox(height: 8),
+                      const Text(
+                        'Add a photo',
                         style: TextStyle(
-                          color: Colors.green.shade700,
+                          color: _forest,
                           fontWeight: FontWeight.w600,
                         ),
                       ),
-                    ),
-                    onTap: () => setState(() => _selectedSiteId = site.id),
+                      const SizedBox(height: 4),
+                      const Text(
+                        'Optional  ·  JPG or PNG, up to 5 MB',
+                        style: TextStyle(
+                          color: Color(0xFF6E746E),
+                          fontSize: 12,
+                        ),
+                      ),
+                    ],
+                  )
+                : Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(5),
+                        child: kIsWeb && _imageUrl != null
+                            ? Image.network(_imageUrl!, fit: BoxFit.cover)
+                            : (_imagePreviewBytes != null
+                                  ? Image.memory(
+                                      _imagePreviewBytes!,
+                                      fit: BoxFit.cover,
+                                    )
+                                  : const SizedBox.shrink()),
+                      ),
+                      Positioned(
+                        top: 8,
+                        right: 8,
+                        child: IconButton.filled(
+                          tooltip: 'Remove photo',
+                          onPressed: _removeImage,
+                          style: IconButton.styleFrom(
+                            backgroundColor: Colors.black54,
+                            foregroundColor: Colors.white,
+                          ),
+                          icon: const Icon(Icons.close),
+                        ),
+                      ),
+                      if (_isUploading)
+                        const ColoredBox(
+                          color: Color(0x88000000),
+                          child: Center(
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
-                );
-              },
-            ),
-          ],
+          ),
         ),
-      ),
+        const SizedBox(height: 28),
+        _sectionTitle('03', 'Story'),
+        const SizedBox(height: 14),
+        TextField(
+          controller: _narrativeCtrl,
+          minLines: 4,
+          maxLines: 6,
+          decoration: _fieldDecoration(
+            'Cultural story *',
+            hint: 'What should future generations know?',
+          ),
+        ),
+        const SizedBox(height: 12),
+        TextField(
+          controller: _traditionalCtrl,
+          minLines: 2,
+          maxLines: 4,
+          decoration: _fieldDecoration(
+            'Traditional use (optional)',
+            hint: 'Preparation, use, or related practices',
+          ),
+        ),
+        const SizedBox(height: 12),
+        TextField(
+          controller: _userNameCtrl,
+          decoration: _fieldDecoration('Your name (optional)'),
+        ),
+        const SizedBox(height: 24),
+        SizedBox(
+          width: double.infinity,
+          height: 54,
+          child: ElevatedButton.icon(
+            onPressed: (_isSubmitting || _isUploading) ? null : _submitForm,
+            style: ElevatedButton.styleFrom(
+              backgroundColor: _forest,
+              foregroundColor: Colors.white,
+              disabledBackgroundColor: _forest.withValues(alpha: 0.55),
+              elevation: 0,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(6),
+              ),
+            ),
+            icon: (_isSubmitting || _isUploading)
+                ? const SizedBox(
+                    width: 18,
+                    height: 18,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Colors.white,
+                    ),
+                  )
+                : const Icon(Icons.arrow_upward, size: 18),
+            label: Text(
+              (_isSubmitting || _isUploading)
+                  ? 'Submitting...'
+                  : 'Submit contribution',
+              style: const TextStyle(fontWeight: FontWeight.w600),
+            ),
+          ),
+        ),
+      ],
     );
   }
 
-  Widget _sectionTitle(String title, IconData icon) => Row(
-    children: [
-      Container(
-        padding: const EdgeInsets.all(6),
-        decoration: BoxDecoration(
-          color: Colors.green.shade100,
-          borderRadius: BorderRadius.circular(8),
+  InputDecoration _fieldDecoration(String label, {String? hint}) =>
+      InputDecoration(
+        labelText: label,
+        hintText: hint,
+        filled: true,
+        fillColor: const Color(0xFFFBFAF6),
+        isDense: true,
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 14,
+          vertical: 15,
         ),
-        child: Icon(icon, size: 18, color: Colors.green.shade700),
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(6),
+          borderSide: const BorderSide(color: _rule),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(6),
+          borderSide: const BorderSide(color: _rule),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(6),
+          borderSide: const BorderSide(color: _forest, width: 1.5),
+        ),
+      );
+
+  Widget _sectionTitle(String number, String title) => Row(
+    children: [
+      Text(
+        number,
+        style: const TextStyle(
+          color: _clay,
+          fontSize: 12,
+          fontWeight: FontWeight.w700,
+        ),
       ),
-      const SizedBox(width: 8),
+      const SizedBox(width: 10),
       Text(
         title,
-        style: TextStyle(
-          fontSize: 16,
-          fontWeight: FontWeight.w600,
-          color: Colors.green.shade800,
+        style: const TextStyle(
+          color: _forest,
+          fontFamily: 'Georgia',
+          fontSize: 20,
+          fontWeight: FontWeight.w700,
         ),
       ),
     ],

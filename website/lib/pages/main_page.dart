@@ -19,10 +19,30 @@ class _MainPageState extends State<MainPage> {
 
   // Navigation items data
   final List<NavigationItem> _navItems = const [
-    NavigationItem(title: 'Crowdsource', index: 0),
-    NavigationItem(title: 'Knowledge Graph', index: 1),
-    NavigationItem(title: 'VLM Identification', index: 2),
-    NavigationItem(title: 'BI Dashboard', index: 3),
+    NavigationItem(
+      title: 'Crowdsource',
+      label: 'Collect',
+      icon: Icons.add_location_alt_outlined,
+      index: 0,
+    ),
+    NavigationItem(
+      title: 'Knowledge Graph',
+      label: 'Graph',
+      icon: Icons.hub_outlined,
+      index: 1,
+    ),
+    NavigationItem(
+      title: 'VLM Identification',
+      label: 'Identify',
+      icon: Icons.image_search_outlined,
+      index: 2,
+    ),
+    NavigationItem(
+      title: 'BI Dashboard',
+      label: 'Insights',
+      icon: Icons.insights_outlined,
+      index: 3,
+    ),
   ];
 
   @override
@@ -41,57 +61,94 @@ class _MainPageState extends State<MainPage> {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: Scaffold(
-        body: Column(
-          children: [
-            // Custom App Bar with responsive design
-            SafeArea(
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 24,
-                  vertical: 16,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.green.shade50,
-                  border: Border(
-                    bottom: BorderSide(color: Colors.green.shade100, width: 1),
+      home: LayoutBuilder(
+        builder: (context, constraints) {
+          final isMobile = constraints.maxWidth < 800;
+          return Scaffold(
+            backgroundColor: const Color(0xFFF5F2E9),
+            appBar: isMobile
+                ? AppBar(
+                    toolbarHeight: 56,
+                    backgroundColor: const Color(0xFFF5F2E9),
+                    foregroundColor: const Color(0xFF24473C),
+                    elevation: 0,
+                    title: Text(
+                      _navItems[_selectedIndex].title,
+                      style: const TextStyle(
+                        fontFamily: 'Georgia',
+                        fontSize: 20,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  )
+                : null,
+            body: Column(
+              children: [
+                if (!isMobile)
+                  SafeArea(
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 24,
+                        vertical: 16,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF5F2E9),
+                        border: Border(
+                          bottom: BorderSide(
+                            color: Colors.green.shade100,
+                            width: 1,
+                          ),
+                        ),
+                      ),
+                      child: LayoutBuilder(
+                        builder: (context, headerConstraints) {
+                          final isSmallScreen =
+                              headerConstraints.maxWidth < 800;
+                          if (isSmallScreen) {
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                _buildLogoSection(),
+                                const SizedBox(height: 16),
+                                _buildNavigationButtons(isSmallScreen: true),
+                              ],
+                            );
+                          }
+                          return Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              _buildLogoSection(),
+                              _buildNavigationButtons(isSmallScreen: false),
+                            ],
+                          );
+                        },
+                      ),
+                    ),
                   ),
-                ),
-                child: LayoutBuilder(
-                  builder: (context, constraints) {
-                    // Responsive layout: column on small screens, row on larger
-                    final isSmallScreen = constraints.maxWidth < 800;
-
-                    if (isSmallScreen) {
-                      return Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Logo section
-                          _buildLogoSection(),
-                          const SizedBox(height: 16),
-                          // Navigation buttons
-                          _buildNavigationButtons(isSmallScreen: true),
-                        ],
-                      );
-                    } else {
-                      return Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          // Logo section
-                          _buildLogoSection(),
-                          // Navigation buttons
-                          _buildNavigationButtons(isSmallScreen: false),
-                        ],
-                      );
-                    }
-                  },
-                ),
-              ),
+                Expanded(child: _pages[_selectedIndex]),
+              ],
             ),
-            // Main content area - displays selected page
-            Expanded(child: _pages[_selectedIndex]),
-          ],
-        ),
+            bottomNavigationBar: isMobile
+                ? NavigationBar(
+                    height: 68,
+                    backgroundColor: const Color(0xFFFBFAF6),
+                    indicatorColor: const Color(0xFFE5E9DF),
+                    selectedIndex: _selectedIndex,
+                    onDestinationSelected: (index) {
+                      setState(() => _selectedIndex = index);
+                    },
+                    destinations: _navItems
+                        .map(
+                          (item) => NavigationDestination(
+                            icon: Icon(item.icon),
+                            label: item.label,
+                          ),
+                        )
+                        .toList(),
+                  )
+                : null,
+          );
+        },
       ),
     );
   }
@@ -183,7 +240,14 @@ class _MainPageState extends State<MainPage> {
 
 class NavigationItem {
   final String title;
+  final String label;
+  final IconData icon;
   final int index;
 
-  const NavigationItem({required this.title, required this.index});
+  const NavigationItem({
+    required this.title,
+    required this.label,
+    required this.icon,
+    required this.index,
+  });
 }
