@@ -39,5 +39,4 @@ flutter:
   assets:
     - assets/labels/class_names.txt
     - assets/metadata/medicinal_plants_data.json
-    - assets/models/ugandan_plants_model_scripted.pt
     - assets/ # This includes all other assets in the assets folder

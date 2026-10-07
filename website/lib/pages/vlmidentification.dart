@@ -1,16 +1,11 @@
-import 'dart:async';
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter/foundation.dart' show kIsWeb;
-import 'dart:io';
 import 'package:image_picker/image_picker.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:image/image.dart' as img;
-
-// For web platform only
-import 'dart:html' as html;
 
 class Vlmidentification extends StatefulWidget {
   const Vlmidentification({super.key});
@@ -21,8 +16,7 @@ class Vlmidentification extends StatefulWidget {
 
 class _VlmidentificationState extends State<Vlmidentification>
     with SingleTickerProviderStateMixin {
-  dynamic _selectedImage;
-  String? _imagePreviewUrl;
+  Uint8List? _selectedImageBytes;
   bool _isProcessing = false;
   bool _hasResults = false;
   String _debugInfo = '';
@@ -206,54 +200,26 @@ class _VlmidentificationState extends State<Vlmidentification>
 
   Future<void> _pickImage() async {
     try {
-      if (kIsWeb) {
-        final html.FileUploadInputElement uploadInput =
-            html.FileUploadInputElement();
-        uploadInput.accept = 'image/jpeg, image/png, image/jpg';
-        uploadInput.click();
+      final ImagePicker picker = ImagePicker();
+      final XFile? image = await picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 800,
+        maxHeight: 800,
+        imageQuality: 85,
+      );
 
-        uploadInput.onChange.listen((event) async {
-          final files = uploadInput.files;
-          if (files != null && files.isNotEmpty) {
-            final file = files[0];
-            final reader = html.FileReader();
-            reader.readAsDataUrl(file);
-            reader.onLoadEnd.listen((event) async {
-              if (mounted) {
-                setState(() {
-                  _imagePreviewUrl = reader.result as String;
-                  _hasResults = false;
-                  _identificationResults = {};
-                  _debugInfo =
-                      '✅ Image loaded: ${file.name}\n'
-                      'Choose a question and analyze with the Hugging Face VLM.';
-                });
-              }
-              _selectedImage = file;
-            });
-          }
+      if (image != null) {
+        final imageBytes = await image.readAsBytes();
+        if (!mounted) return;
+
+        setState(() {
+          _selectedImageBytes = imageBytes;
+          _hasResults = false;
+          _identificationResults = {};
+          _debugInfo =
+              '✅ Image loaded: ${image.name}\n'
+              'Choose a question and analyze with the Hugging Face VLM.';
         });
-      } else {
-        final ImagePicker picker = ImagePicker();
-        final XFile? image = await picker.pickImage(
-          source: ImageSource.gallery,
-          maxWidth: 800,
-          maxHeight: 800,
-          imageQuality: 85,
-        );
-
-        if (image != null && mounted) {
-          final File imageFile = File(image.path);
-          setState(() {
-            _selectedImage = imageFile;
-            _imagePreviewUrl = imageFile.path;
-            _hasResults = false;
-            _identificationResults = {};
-            _debugInfo =
-                '✅ Image loaded: ${image.name}\n'
-                'Choose a question and analyze with the Hugging Face VLM.';
-          });
-        }
       }
     } catch (e) {
       if (mounted) {
@@ -266,7 +232,7 @@ class _VlmidentificationState extends State<Vlmidentification>
   }
 
   Future<void> _processImage() async {
-    if (_selectedImage == null) {
+    if (_selectedImageBytes == null) {
       _showSnackBar('Please upload an image first', Colors.orange);
       return;
     }
@@ -292,7 +258,7 @@ class _VlmidentificationState extends State<Vlmidentification>
         });
       }
 
-      final imageBytes = await _getImageBytes();
+      final imageBytes = _selectedImageBytes;
       if (imageBytes == null) {
         throw Exception('Failed to read image data');
       }
@@ -366,24 +332,6 @@ Provide a concise, evidence-based answer. State uncertainty rather than inventin
         _showSnackBar('Error identifying plant: $e', Colors.red);
       }
     }
-  }
-
-  Future<Uint8List?> _getImageBytes() async {
-    if (kIsWeb && _selectedImage != null) {
-      final completer = Completer<Uint8List?>();
-      final reader = html.FileReader();
-      reader.readAsArrayBuffer(_selectedImage);
-      reader.onLoadEnd.listen((event) {
-        completer.complete(reader.result as Uint8List?);
-      });
-      reader.onError.listen((event) {
-        completer.completeError('Failed to read image');
-      });
-      return completer.future;
-    } else if (!kIsWeb && _selectedImage != null) {
-      return await (_selectedImage as File).readAsBytes();
-    }
-    return null;
   }
 
   String _getImageMimeType(Uint8List bytes) {
@@ -653,7 +601,7 @@ Provide a concise, evidence-based answer. State uncertainty rather than inventin
                       ),
                     if (!_hasResults &&
                         !_isProcessing &&
-                        _selectedImage == null)
+                        _selectedImageBytes == null)
                       Expanded(flex: 1, child: _buildInfoSection()),
                   ],
                 ),
@@ -830,7 +778,7 @@ Provide a concise, evidence-based answer. State uncertainty rather than inventin
                   borderRadius: BorderRadius.circular(12),
                   color: Colors.green.shade50,
                 ),
-                child: _selectedImage == null
+                child: _selectedImageBytes == null
                     ? Column(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
@@ -892,17 +840,10 @@ Provide a concise, evidence-based answer. State uncertainty rather than inventin
                         children: [
                           ClipRRect(
                             borderRadius: BorderRadius.circular(12),
-                            child: kIsWeb && _imagePreviewUrl != null
-                                ? Image.network(
-                                    _imagePreviewUrl!,
-                                    fit: BoxFit.cover,
-                                  )
-                                : (_selectedImage is File
-                                      ? Image.file(
-                                          _selectedImage as File,
-                                          fit: BoxFit.cover,
-                                        )
-                                      : const SizedBox()),
+                            child: Image.memory(
+                              _selectedImageBytes!,
+                              fit: BoxFit.cover,
+                            ),
                           ),
                           Positioned(
                             top: 8,
@@ -920,8 +861,7 @@ Provide a concise, evidence-based answer. State uncertainty rather than inventin
                                 ),
                                 onPressed: () {
                                   setState(() {
-                                    _selectedImage = null;
-                                    _imagePreviewUrl = null;
+                                    _selectedImageBytes = null;
                                     _hasResults = false;
                                     _identificationResults = {};
                                   });
@@ -937,7 +877,8 @@ Provide a concise, evidence-based answer. State uncertainty rather than inventin
             SizedBox(
               width: double.infinity,
               child: ElevatedButton.icon(
-                onPressed: _selectedImage != null && !_isProcessing && _apiReady
+                onPressed:
+                    _selectedImageBytes != null && !_isProcessing && _apiReady
                     ? _processImage
                     : null,
                 icon: _isProcessing
