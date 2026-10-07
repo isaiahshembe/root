@@ -137,22 +137,34 @@ class _MainPageState extends State<MainPage> {
               ],
             ),
             bottomNavigationBar: isMobile
-                ? NavigationBar(
-                    height: 68,
-                    backgroundColor: Colors.white,
-                    indicatorColor: const Color(0xFFFFEDAA),
-                    selectedIndex: _selectedIndex,
-                    onDestinationSelected: (index) {
-                      setState(() => _selectedIndex = index);
-                    },
-                    destinations: _navItems
-                        .map(
-                          (item) => NavigationDestination(
-                            icon: Icon(item.icon),
-                            label: item.label,
-                          ),
-                        )
-                        .toList(),
+                ? Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(child: Container(height: 4, color: _red)),
+                          Expanded(child: Container(height: 4, color: _sun)),
+                          Expanded(child: Container(height: 4, color: _ink)),
+                        ],
+                      ),
+                      NavigationBar(
+                        height: 68,
+                        backgroundColor: Colors.white,
+                        indicatorColor: const Color(0xFFFFEDAA),
+                        selectedIndex: _selectedIndex,
+                        onDestinationSelected: (index) {
+                          setState(() => _selectedIndex = index);
+                        },
+                        destinations: _navItems
+                            .map(
+                              (item) => NavigationDestination(
+                                icon: Icon(item.icon),
+                                label: item.label,
+                              ),
+                            )
+                            .toList(),
+                      ),
+                    ],
                   )
                 : null,
           );

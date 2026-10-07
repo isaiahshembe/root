@@ -455,8 +455,22 @@ class _CrowdsourceState extends State<Crowdsource> {
               ),
               child: Center(
                 child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 760),
-                  child: _buildForm(),
+                  constraints: const BoxConstraints(maxWidth: 1000),
+                  child: LayoutBuilder(
+                    builder: (context, formConstraints) {
+                      if (formConstraints.maxWidth < 900) {
+                        return _buildForm();
+                      }
+                      return Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          SizedBox(width: 150, child: _buildSectionRail()),
+                          const SizedBox(width: 32),
+                          Expanded(child: _buildForm()),
+                        ],
+                      );
+                    },
+                  ),
                 ),
               ),
             );
@@ -470,43 +484,60 @@ class _CrowdsourceState extends State<Crowdsource> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Row(
-          children: [
-            _flagMark(_clay),
-            const SizedBox(width: 3),
-            _flagMark(_sun),
-            const SizedBox(width: 3),
-            _flagMark(_ink),
-            const SizedBox(width: 10),
-            Text(
-              'LIVING HERITAGE  /  UGANDA',
-              style: GoogleFonts.spaceGrotesk(
-                color: _forest,
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
+        ClipRRect(
+          borderRadius: BorderRadius.circular(8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
+                children: [
+                  Expanded(child: Container(height: 6, color: _clay)),
+                  Expanded(child: Container(height: 6, color: _sun)),
+                  Expanded(child: Container(height: 6, color: _ink)),
+                ],
               ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 12),
-        Text(
-          'Share what you know',
-          style: GoogleFonts.newsreader(
-            color: _forest,
-            fontSize: 32,
-            fontWeight: FontWeight.w700,
-            height: 1.1,
+              Container(
+                color: _forest,
+                padding: const EdgeInsets.fromLTRB(22, 20, 22, 22),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'LIVING HERITAGE  /  UGANDA',
+                      style: GoogleFonts.spaceGrotesk(
+                        color: _sun,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      'Knowledge lives here.',
+                      style: GoogleFonts.newsreader(
+                        color: Colors.white,
+                        fontSize: 32,
+                        fontWeight: FontWeight.w700,
+                        height: 1.1,
+                      ),
+                    ),
+                    const SizedBox(height: 6),
+                    Text(
+                      'Share a story from your community.',
+                      style: GoogleFonts.manrope(
+                        color: Colors.white.withValues(alpha: 0.86),
+                        fontSize: 14,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
           ),
-        ),
-        const SizedBox(height: 6),
-        const Text(
-          'Help preserve the knowledge held in your community.',
-          style: TextStyle(color: _ink, fontSize: 15, height: 1.45),
         ),
         const SizedBox(height: 24),
         const Divider(height: 1, color: _rule),
         const SizedBox(height: 28),
-        _sectionTitle('', 'Place'),
+        _sectionTitle('01', 'Place'),
         const SizedBox(height: 14),
         Row(
           children: [
@@ -576,87 +607,100 @@ class _CrowdsourceState extends State<Crowdsource> {
           },
         ),
         const SizedBox(height: 28),
-        _sectionTitle('', 'Photo'),
+        _sectionTitle('02', 'Photo'),
         const SizedBox(height: 14),
         GestureDetector(
           onTap: _selectedImage == null ? _pickImage : null,
           child: Container(
-            height: 156,
+            height: 164,
             width: double.infinity,
             decoration: BoxDecoration(
               color: const Color(0xFFECE9DF),
-              border: Border.all(color: _rule),
+              border: Border.all(color: _forest, width: 1.5),
               borderRadius: BorderRadius.circular(6),
             ),
-            child: _selectedImage == null
-                ? Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.add_a_photo_outlined,
-                        color: _forest,
-                        size: 28,
-                      ),
-                      const SizedBox(height: 8),
-                      const Text(
-                        'Add a photo',
-                        style: TextStyle(
-                          color: _forest,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      const Text(
-                        'Optional  ·  JPG or PNG, up to 5 MB',
-                        style: TextStyle(
-                          color: Color(0xFF6E746E),
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
-                  )
-                : Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(5),
-                        child: kIsWeb && _imageUrl != null
-                            ? Image.network(_imageUrl!, fit: BoxFit.cover)
-                            : (_imagePreviewBytes != null
-                                  ? Image.memory(
-                                      _imagePreviewBytes!,
-                                      fit: BoxFit.cover,
-                                    )
-                                  : const SizedBox.shrink()),
-                      ),
-                      Positioned(
-                        top: 8,
-                        right: 8,
-                        child: IconButton.filled(
-                          tooltip: 'Remove photo',
-                          onPressed: _removeImage,
-                          style: IconButton.styleFrom(
-                            backgroundColor: Colors.black54,
-                            foregroundColor: Colors.white,
-                          ),
-                          icon: const Icon(Icons.close),
-                        ),
-                      ),
-                      if (_isUploading)
-                        const ColoredBox(
-                          color: Color(0x88000000),
-                          child: Center(
-                            child: CircularProgressIndicator(
-                              color: Colors.white,
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    Expanded(child: Container(height: 4, color: _clay)),
+                    Expanded(child: Container(height: 4, color: _sun)),
+                    Expanded(child: Container(height: 4, color: _ink)),
+                  ],
+                ),
+                Expanded(
+                  child: _selectedImage == null
+                      ? Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(
+                              Icons.add_a_photo_outlined,
+                              color: _forest,
+                              size: 28,
                             ),
-                          ),
+                            const SizedBox(height: 8),
+                            const Text(
+                              'Add a photo',
+                              style: TextStyle(
+                                color: _forest,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            const Text(
+                              'Optional  ·  JPG or PNG, up to 5 MB',
+                              style: TextStyle(
+                                color: Color(0xFF6E746E),
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        )
+                      : Stack(
+                          fit: StackFit.expand,
+                          children: [
+                            ClipRRect(
+                              borderRadius: BorderRadius.circular(5),
+                              child: kIsWeb && _imageUrl != null
+                                  ? Image.network(_imageUrl!, fit: BoxFit.cover)
+                                  : (_imagePreviewBytes != null
+                                        ? Image.memory(
+                                            _imagePreviewBytes!,
+                                            fit: BoxFit.cover,
+                                          )
+                                        : const SizedBox.shrink()),
+                            ),
+                            Positioned(
+                              top: 8,
+                              right: 8,
+                              child: IconButton.filled(
+                                tooltip: 'Remove photo',
+                                onPressed: _removeImage,
+                                style: IconButton.styleFrom(
+                                  backgroundColor: Colors.black54,
+                                  foregroundColor: Colors.white,
+                                ),
+                                icon: const Icon(Icons.close),
+                              ),
+                            ),
+                            if (_isUploading)
+                              const ColoredBox(
+                                color: Color(0x88000000),
+                                child: Center(
+                                  child: CircularProgressIndicator(
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ),
+                          ],
                         ),
-                    ],
-                  ),
+                ),
+              ],
+            ),
           ),
         ),
         const SizedBox(height: 28),
-        _sectionTitle('', 'Story'),
+        _sectionTitle('03', 'Story'),
         const SizedBox(height: 14),
         TextField(
           controller: _narrativeCtrl,
@@ -753,27 +797,82 @@ class _CrowdsourceState extends State<Crowdsource> {
     ),
   );
 
-  Widget _sectionTitle(String number, String title) => Row(
-    children: [
-      Text(
-        number,
-        style: GoogleFonts.spaceGrotesk(
-          color: _clay,
-          fontSize: 12,
-          fontWeight: FontWeight.w700,
+  Widget _buildSectionRail() => Padding(
+    padding: const EdgeInsets.only(top: 210),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 5,
+          height: 28,
+          decoration: const BoxDecoration(
+            borderRadius: BorderRadius.all(Radius.circular(3)),
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [_clay, _sun, _ink],
+              stops: [0, 0.5, 1],
+            ),
+          ),
         ),
-      ),
-      const SizedBox(width: 10),
-      Text(
-        title,
-        style: GoogleFonts.newsreader(
-          color: _forest,
-          fontSize: 20,
-          fontWeight: FontWeight.w700,
+        const SizedBox(height: 14),
+        Text(
+          'A COMMUNITY\nARCHIVE',
+          style: GoogleFonts.spaceGrotesk(
+            color: _forest,
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
+            height: 1.4,
+          ),
         ),
-      ),
-    ],
+        const SizedBox(height: 8),
+        const Text(
+          'Place, image, story.',
+          style: TextStyle(color: _ink, fontSize: 12, height: 1.5),
+        ),
+      ],
+    ),
   );
+
+  Widget _sectionTitle(String number, String title) {
+    final markerColor = switch (number) {
+      '01' => _clay,
+      '02' => _sun,
+      _ => _ink,
+    };
+    final markerTextColor = number == '02' ? _ink : Colors.white;
+
+    return Row(
+      children: [
+        Container(
+          width: 34,
+          height: 30,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: markerColor,
+            borderRadius: BorderRadius.circular(5),
+          ),
+          child: Text(
+            number,
+            style: GoogleFonts.spaceGrotesk(
+              color: markerTextColor,
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Text(
+          title,
+          style: GoogleFonts.newsreader(
+            color: _forest,
+            fontSize: 21,
+            fontWeight: FontWeight.w700,
+          ),
+        ),
+      ],
+    );
+  }
 }
 
 class HeritageSite {
