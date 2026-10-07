@@ -68,6 +68,14 @@ class _MainPageState extends State<MainPage> {
   Widget build(BuildContext context) {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
+      theme: ThemeData(
+        useMaterial3: true,
+        scaffoldBackgroundColor: _canvas,
+        fontFamily: GoogleFonts.manrope().fontFamily,
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: _forest,
+        ).copyWith(secondary: _red),
+      ),
       home: LayoutBuilder(
         builder: (context, constraints) {
           final isMobile = constraints.maxWidth < 800;

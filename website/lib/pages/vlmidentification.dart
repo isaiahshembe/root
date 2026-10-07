@@ -1,8 +1,10 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:image_picker/image_picker.dart';
+import 'package:website/src/heritage_theme.dart';
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:image/image.dart' as img;
@@ -501,12 +503,16 @@ Provide a concise, evidence-based answer. State uncertainty rather than inventin
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: HeritagePalette.canvas,
       body: LayoutBuilder(
         builder: (context, constraints) {
           return SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
+            padding: EdgeInsets.all(constraints.maxWidth < 600 ? 16 : 24),
             child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
+                const HeritageTricolorBand(height: 5),
+                const SizedBox(height: 14),
                 _buildHeader(),
                 const SizedBox(height: 24),
                 if (_debugInfo.isNotEmpty)
@@ -588,23 +594,42 @@ Provide a concise, evidence-based answer. State uncertainty rather than inventin
                       ],
                     ),
                   ),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Expanded(flex: 1, child: _buildUploadSection()),
-                    if (_isProcessing || _hasResults)
-                      Expanded(
-                        flex: 1,
-                        child: _isProcessing
+                if (constraints.maxWidth < 900)
+                  Column(
+                    children: [
+                      _buildUploadSection(),
+                      if (_isProcessing || _hasResults) ...[
+                        const SizedBox(height: 16),
+                        _isProcessing
                             ? _buildProcessingSection()
                             : _buildResultsSection(),
-                      ),
-                    if (!_hasResults &&
-                        !_isProcessing &&
-                        _selectedImageBytes == null)
-                      Expanded(flex: 1, child: _buildInfoSection()),
-                  ],
-                ),
+                      ] else if (_selectedImageBytes == null) ...[
+                        const SizedBox(height: 16),
+                        _buildInfoSection(),
+                      ],
+                    ],
+                  )
+                else
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(child: _buildUploadSection()),
+                      if (_isProcessing || _hasResults) ...[
+                        const SizedBox(width: 20),
+                        Expanded(
+                          child: _isProcessing
+                              ? _buildProcessingSection()
+                              : _buildResultsSection(),
+                        ),
+                      ],
+                      if (!_hasResults &&
+                          !_isProcessing &&
+                          _selectedImageBytes == null) ...[
+                        const SizedBox(width: 20),
+                        Expanded(child: _buildInfoSection()),
+                      ],
+                    ],
+                  ),
               ],
             ),
           );
@@ -618,8 +643,8 @@ Provide a concise, evidence-based answer. State uncertainty rather than inventin
 
   Widget _buildHeader() {
     return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      elevation: 0,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       color: Colors.white,
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -629,12 +654,8 @@ Provide a concise, evidence-based answer. State uncertainty rather than inventin
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [Colors.green.shade50, Colors.green.shade100],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.circular(12),
+                color: HeritagePalette.canvas,
+                borderRadius: BorderRadius.circular(6),
               ),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -650,11 +671,11 @@ Provide a concise, evidence-based answer. State uncertainty rather than inventin
                       Expanded(
                         child: Text(
                           'Ugandan Medicinal Plants Identifier',
-                          style: Theme.of(context).textTheme.headlineMedium
-                              ?.copyWith(
-                                fontWeight: FontWeight.bold,
-                                color: Colors.green.shade800,
-                              ),
+                          style: GoogleFonts.newsreader(
+                            fontSize: 28,
+                            fontWeight: FontWeight.w700,
+                            color: HeritagePalette.forest,
+                          ),
                         ),
                       ),
                     ],
@@ -663,7 +684,10 @@ Provide a concise, evidence-based answer. State uncertainty rather than inventin
                   Text(
                     'Powered by the hosted Ugandan Artifact VLM.\n'
                     'Upload an image and ask about its caption, culture, material, primary use, or cultural significance.',
-                    style: TextStyle(color: Colors.green.shade700, height: 1.4),
+                    style: GoogleFonts.manrope(
+                      color: HeritagePalette.muted,
+                      height: 1.4,
+                    ),
                   ),
                   const SizedBox(height: 16),
                   DropdownButtonFormField<String>(
@@ -706,15 +730,15 @@ Provide a concise, evidence-based answer. State uncertainty rather than inventin
                       child: Container(
                         padding: const EdgeInsets.all(8),
                         decoration: BoxDecoration(
-                          color: Colors.blue.shade100,
-                          borderRadius: BorderRadius.circular(8),
+                          color: HeritagePalette.forest.withValues(alpha: 0.08),
+                          borderRadius: BorderRadius.circular(6),
                         ),
                         child: Row(
                           children: [
                             Icon(
                               Icons.cloud_queue,
                               size: 16,
-                              color: Colors.blue.shade700,
+                              color: HeritagePalette.forest,
                             ),
                             const SizedBox(width: 8),
                             Expanded(
@@ -722,7 +746,7 @@ Provide a concise, evidence-based answer. State uncertainty rather than inventin
                                 'Inference runs remotely through the Hugging Face Space',
                                 style: TextStyle(
                                   fontSize: 12,
-                                  color: Colors.blue.shade700,
+                                  color: HeritagePalette.forest,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
@@ -742,8 +766,8 @@ Provide a concise, evidence-based answer. State uncertainty rather than inventin
 
   Widget _buildUploadSection() {
     return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      elevation: 0,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       color: Colors.white,
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -774,9 +798,9 @@ Provide a concise, evidence-based answer. State uncertainty rather than inventin
                 height: 300,
                 width: double.infinity,
                 decoration: BoxDecoration(
-                  border: Border.all(color: Colors.green.shade200, width: 2),
-                  borderRadius: BorderRadius.circular(12),
-                  color: Colors.green.shade50,
+                  border: Border.all(color: HeritagePalette.forest, width: 1.5),
+                  borderRadius: BorderRadius.circular(6),
+                  color: HeritagePalette.canvas,
                 ),
                 child: _selectedImageBytes == null
                     ? Column(
@@ -901,11 +925,13 @@ Provide a concise, evidence-based answer. State uncertainty rather than inventin
                   ),
                 ),
                 style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green.shade700,
-                  disabledBackgroundColor: Colors.green.shade300,
+                  backgroundColor: HeritagePalette.forest,
+                  disabledBackgroundColor: HeritagePalette.forest.withValues(
+                    alpha: 0.45,
+                  ),
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(6),
                   ),
                 ),
               ),
@@ -922,8 +948,8 @@ Provide a concise, evidence-based answer. State uncertainty rather than inventin
   Widget _buildProcessingSection() {
     // Same as before
     return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      elevation: 0,
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       color: Colors.white,
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -934,7 +960,7 @@ Provide a concise, evidence-based answer. State uncertainty rather than inventin
               children: [
                 Icon(
                   Icons.auto_awesome,
-                  color: Colors.green.shade700,
+                  color: HeritagePalette.forest,
                   size: 28,
                 ),
                 const SizedBox(width: 8),
@@ -944,7 +970,7 @@ Provide a concise, evidence-based answer. State uncertainty rather than inventin
                       : 'Hugging Face VLM Analysis',
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: Colors.green.shade800,
+                    color: HeritagePalette.forest,
                   ),
                 ),
               ],
@@ -973,13 +999,18 @@ Provide a concise, evidence-based answer. State uncertainty rather than inventin
             const SizedBox(height: 24),
             LinearProgressIndicator(
               value: _progressAnimation.value,
-              backgroundColor: Colors.green.shade100,
-              valueColor: AlwaysStoppedAnimation<Color>(Colors.green.shade700),
+              backgroundColor: HeritagePalette.rule,
+              valueColor: const AlwaysStoppedAnimation<Color>(
+                HeritagePalette.forest,
+              ),
             ),
             const SizedBox(height: 8),
             Text(
               'AI Analysis Progress... ${(_progressAnimation.value * 100).toInt()}%',
-              style: TextStyle(fontSize: 12, color: Colors.green.shade600),
+              style: const TextStyle(
+                fontSize: 12,
+                color: HeritagePalette.muted,
+              ),
             ),
           ],
         ),
@@ -1054,8 +1085,8 @@ Provide a concise, evidence-based answer. State uncertainty rather than inventin
 
     if (plant['answer'] is String) {
       return Card(
-        elevation: 4,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        elevation: 0,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
         color: Colors.white,
         child: Padding(
           padding: const EdgeInsets.all(24),
@@ -1068,7 +1099,7 @@ Provide a concise, evidence-based answer. State uncertainty rather than inventin
                     : 'Hugging Face VLM answer',
                 style: Theme.of(context).textTheme.titleLarge?.copyWith(
                   fontWeight: FontWeight.bold,
-                  color: Colors.green.shade800,
+                  color: HeritagePalette.forest,
                 ),
               ),
               const SizedBox(height: 8),
@@ -1081,7 +1112,10 @@ Provide a concise, evidence-based answer. State uncertainty rather than inventin
               const SizedBox(height: 12),
               Text(
                 'Provider: ${plant['provider']}  |  ID: ${plant['analysisId']}',
-                style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: HeritagePalette.muted,
+                ),
               ),
             ],
           ),

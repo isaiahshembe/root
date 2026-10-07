@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:math' as math;
 import 'dart:async';
+import 'package:website/src/heritage_theme.dart';
 
 class Bidashboard extends StatefulWidget {
   const Bidashboard({super.key});
@@ -25,7 +27,6 @@ class _BidashboardState extends State<Bidashboard>
   bool _isLoading = true;
   bool _hasError = false;
   String _errorMessage = '';
-
   @override
   void initState() {
     super.initState();
@@ -58,11 +59,9 @@ class _BidashboardState extends State<Bidashboard>
 
     try {
       final supabase = Supabase.instance.client;
-
       final heritageSites = await supabase
           .from('heritage_sites')
           .select('id, name, description');
-
       final artifacts = await supabase
           .from('artifacts')
           .select(
@@ -71,75 +70,58 @@ class _BidashboardState extends State<Bidashboard>
 
       final totalArtifacts = artifacts.length;
       final totalSites = heritageSites.length;
-
-      // Artifacts by site
-      final Map<String, int> artifactsCountMap = {};
-      for (var site in heritageSites) {
+      final artifactsCountMap = <String, int>{};
+      for (final site in heritageSites) {
         artifactsCountMap[site['name']] = 0;
       }
-      for (var artifact in artifacts) {
-        final siteId = artifact['heritage_site_id'];
+      for (final artifact in artifacts) {
         final site = heritageSites.firstWhere(
-          (s) => s['id'] == siteId,
+          (item) => item['id'] == artifact['heritage_site_id'],
           orElse: () => {'name': 'Unknown'},
         );
         final siteName = site['name'];
         artifactsCountMap[siteName] = (artifactsCountMap[siteName] ?? 0) + 1;
       }
-
       _artifactsBySite =
           artifactsCountMap.entries
-              .map((e) => {'name': e.key, 'count': e.value})
-              .where((e) => (e['count'] as int) > 0)
+              .map((entry) => {'name': entry.key, 'count': entry.value})
+              .where((entry) => (entry['count'] as int) > 0)
               .toList()
             ..sort((a, b) => (b['count'] as int).compareTo(a['count'] as int));
 
-      // Submissions by month for pie chart
-      final Map<String, int> submissionsByMonthMap = {};
-      for (var artifact in artifacts) {
+      final submissionsByMonth = <String, int>{};
+      final submissionsByDay = <String, int>{};
+      final contributorCounts = <String, int>{};
+      for (final artifact in artifacts) {
         final date = DateTime.parse(artifact['submitted_at']);
         final monthKey =
             '${date.year}-${date.month.toString().padLeft(2, '0')}';
-        submissionsByMonthMap[monthKey] =
-            (submissionsByMonthMap[monthKey] ?? 0) + 1;
+        final dayKey =
+            '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
+        submissionsByMonth[monthKey] = (submissionsByMonth[monthKey] ?? 0) + 1;
+        submissionsByDay[dayKey] = (submissionsByDay[dayKey] ?? 0) + 1;
+        final name = artifact['user_name'] ?? 'Anonymous';
+        contributorCounts[name] = (contributorCounts[name] ?? 0) + 1;
       }
 
       _submissionsByMonth =
-          submissionsByMonthMap.entries
-              .map((e) => {'month': e.key, 'count': e.value})
+          submissionsByMonth.entries
+              .map((entry) => {'month': entry.key, 'count': entry.value})
               .toList()
             ..sort(
               (a, b) => (a['month'] as String).compareTo(b['month'] as String),
             );
-
-      // Submissions over time by day
-      final Map<String, int> submissionsByDay = {};
-      for (var artifact in artifacts) {
-        final date = DateTime.parse(artifact['submitted_at']);
-        final dayKey =
-            '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';
-        submissionsByDay[dayKey] = (submissionsByDay[dayKey] ?? 0) + 1;
-      }
-
       _submissionsOverTime =
           submissionsByDay.entries
-              .map((e) => {'date': e.key, 'count': e.value})
+              .map((entry) => {'date': entry.key, 'count': entry.value})
               .toList()
             ..sort(
               (a, b) => (a['date'] as String).compareTo(b['date'] as String),
             );
-
-      // Top contributors
-      final Map<String, int> contributorCounts = {};
-      for (var artifact in artifacts) {
-        final userName = artifact['user_name'] ?? 'Anonymous';
-        contributorCounts[userName] = (contributorCounts[userName] ?? 0) + 1;
-      }
-
       _topContributors =
           contributorCounts.entries
-              .map((e) => {'name': e.key, 'count': e.value})
-              .where((e) => e['name'] != 'Anonymous')
+              .where((entry) => entry.key != 'Anonymous')
+              .map((entry) => {'name': entry.key, 'count': entry.value})
               .toList()
             ..sort((a, b) => (b['count'] as int).compareTo(a['count'] as int));
 
@@ -148,18 +130,15 @@ class _BidashboardState extends State<Bidashboard>
         'totalSites': totalSites,
         'avgArtifactsPerSite': totalSites > 0 ? totalArtifacts / totalSites : 0,
         'mostActiveSite': _artifactsBySite.isNotEmpty
-            ? _artifactsBySite[0]['name']
+            ? _artifactsBySite.first['name']
             : 'None',
         'recentSubmissions': _submissionsOverTime.length,
       };
-
-      setState(() {
-        _isLoading = false;
-      });
-    } catch (e) {
+      setState(() => _isLoading = false);
+    } catch (error) {
       setState(() {
         _hasError = true;
-        _errorMessage = e.toString();
+        _errorMessage = error.toString();
         _isLoading = false;
       });
     }
@@ -167,73 +146,94 @@ class _BidashboardState extends State<Bidashboard>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: Container(
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Colors.green.shade50, Colors.white, Colors.green.shade50],
-          ),
+    return Theme(
+      data: Theme.of(context).copyWith(
+        colorScheme: Theme.of(context).colorScheme.copyWith(
+          primary: HeritagePalette.forest,
+          secondary: HeritagePalette.red,
+          surface: HeritagePalette.surface,
         ),
-        child: LayoutBuilder(
+        textTheme: Theme.of(
+          context,
+        ).textTheme.apply(fontFamily: GoogleFonts.manrope().fontFamily),
+      ),
+      child: Scaffold(
+        backgroundColor: HeritagePalette.canvas,
+        body: LayoutBuilder(
           builder: (context, constraints) {
             final isMobile = constraints.maxWidth < 900;
-
             return SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
-              child: FadeTransition(
-                opacity: _fadeAnimation,
-                child: ScaleTransition(
-                  scale: _scaleAnimation,
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      _buildHeader(),
-                      const SizedBox(height: 24),
-                      _buildStatsGrid(isMobile),
-                      const SizedBox(height: 24),
-                      if (_isLoading)
-                        _buildLoadingState()
-                      else if (_hasError)
-                        _buildErrorState()
-                      else
-                        Column(
-                          children: [
-                            Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
+              padding: EdgeInsets.fromLTRB(
+                isMobile ? 16 : 32,
+                20,
+                isMobile ? 16 : 32,
+                32,
+              ),
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 1440),
+                  child: FadeTransition(
+                    opacity: _fadeAnimation,
+                    child: ScaleTransition(
+                      scale: _scaleAnimation,
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          _buildHeader(),
+                          const SizedBox(height: 20),
+                          _buildStatsGrid(isMobile),
+                          const SizedBox(height: 20),
+                          if (_isLoading)
+                            _buildLoadingState()
+                          else if (_hasError)
+                            _buildErrorState()
+                          else
+                            Column(
                               children: [
-                                Expanded(
-                                  flex: 2,
-                                  child: _buildSubmissionsTrend(),
-                                ),
-                                const SizedBox(width: 24),
-                                Expanded(
-                                  flex: 1,
-                                  child: _buildMonthlyDistributionChart(),
-                                ),
+                                if (isMobile) ...[
+                                  _buildSubmissionsTrend(),
+                                  const SizedBox(height: 16),
+                                  _buildMonthlyDistributionChart(),
+                                  const SizedBox(height: 16),
+                                  _buildArtifactsBySiteChart(),
+                                  const SizedBox(height: 16),
+                                  _buildTopContributors(),
+                                ] else ...[
+                                  Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Expanded(
+                                        flex: 2,
+                                        child: _buildSubmissionsTrend(),
+                                      ),
+                                      const SizedBox(width: 18),
+                                      Expanded(
+                                        child: _buildMonthlyDistributionChart(),
+                                      ),
+                                    ],
+                                  ),
+                                  const SizedBox(height: 18),
+                                  Row(
+                                    crossAxisAlignment:
+                                        CrossAxisAlignment.start,
+                                    children: [
+                                      Expanded(
+                                        flex: 2,
+                                        child: _buildArtifactsBySiteChart(),
+                                      ),
+                                      const SizedBox(width: 18),
+                                      Expanded(child: _buildTopContributors()),
+                                    ],
+                                  ),
+                                ],
+                                const SizedBox(height: 18),
+                                _buildEnhancedInsightsPanel(),
                               ],
                             ),
-                            const SizedBox(height: 24),
-                            Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Expanded(
-                                  flex: 2,
-                                  child: _buildArtifactsBySiteChart(),
-                                ),
-                                const SizedBox(width: 24),
-                                Expanded(
-                                  flex: 1,
-                                  child: _buildTopContributors(),
-                                ),
-                              ],
-                            ),
-                            const SizedBox(height: 24),
-                            _buildEnhancedInsightsPanel(),
-                          ],
-                        ),
-                    ],
+                        ],
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -245,69 +245,47 @@ class _BidashboardState extends State<Bidashboard>
   }
 
   Widget _buildHeader() {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Colors.green.shade600, Colors.green.shade800],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.green.shade200,
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const HeritageTricolorBand(height: 6),
+          Container(
+            color: HeritagePalette.forest,
+            padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.2),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: const Icon(
-                    Icons.insights,
-                    color: Colors.white,
-                    size: 32,
+                Text(
+                  'LIVING HERITAGE  /  INSIGHTS',
+                  style: GoogleFonts.spaceGrotesk(
+                    color: HeritagePalette.sun,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'Business Intelligence Dashboard',
-                        style: TextStyle(
-                          fontSize: 28,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.white,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Real-time analytics and insights for Uganda\'s heritage data warehouse',
-                        style: TextStyle(
-                          color: Colors.white.withOpacity(0.9),
-                          fontSize: 14,
-                        ),
-                      ),
-                    ],
+                const SizedBox(height: 8),
+                Text(
+                  'A picture of heritage activity',
+                  style: GoogleFonts.newsreader(
+                    color: Colors.white,
+                    fontSize: 28,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  'Submissions, sites and community participation.',
+                  style: GoogleFonts.manrope(
+                    color: Colors.white.withValues(alpha: 0.86),
+                    fontSize: 13,
                   ),
                 ),
               ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -319,34 +297,34 @@ class _BidashboardState extends State<Bidashboard>
       crossAxisCount: isMobile ? 2 : 4,
       crossAxisSpacing: 16,
       mainAxisSpacing: 16,
-      childAspectRatio: 1.2,
+      childAspectRatio: isMobile ? 0.9 : 1.65,
       children: [
         _buildAnimatedStatCard(
           'Total Artifacts',
           _dashboardData['totalArtifacts']?.toString() ?? '0',
           Icons.photo_library,
-          Colors.green,
+          HeritagePalette.forest,
           'collected',
         ),
         _buildAnimatedStatCard(
           'Heritage Sites',
           _dashboardData['totalSites']?.toString() ?? '0',
           Icons.forest,
-          Colors.blue,
+          HeritagePalette.red,
           'protected',
         ),
         _buildAnimatedStatCard(
           'Avg Artifacts/Site',
           _dashboardData['avgArtifactsPerSite']?.toStringAsFixed(1) ?? '0',
           Icons.bar_chart,
-          Colors.orange,
+          HeritagePalette.sun,
           'per site',
         ),
         _buildAnimatedStatCard(
           'Most Active Site',
           _dashboardData['mostActiveSite'] ?? 'None',
           Icons.emoji_events,
-          Colors.purple,
+          HeritagePalette.ink,
           'leader',
         ),
       ],
@@ -357,7 +335,7 @@ class _BidashboardState extends State<Bidashboard>
     String title,
     String value,
     IconData icon,
-    MaterialColor color,
+    Color color,
     String subtitle,
   ) {
     return TweenAnimationBuilder<double>(
@@ -368,19 +346,9 @@ class _BidashboardState extends State<Bidashboard>
           scale: animValue,
           child: Container(
             decoration: BoxDecoration(
-              gradient: LinearGradient(
-                colors: [Colors.white, color.shade50],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-              borderRadius: BorderRadius.circular(20),
-              boxShadow: [
-                BoxShadow(
-                  color: color.withOpacity(0.2),
-                  blurRadius: 10,
-                  offset: const Offset(0, 4),
-                ),
-              ],
+              color: HeritagePalette.surface,
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: HeritagePalette.rule),
             ),
             child: Padding(
               padding: const EdgeInsets.all(20),
@@ -390,10 +358,10 @@ class _BidashboardState extends State<Bidashboard>
                   Container(
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: color.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(16),
+                      color: color.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(6),
                     ),
-                    child: Icon(icon, color: color.shade700, size: 32),
+                    child: Icon(icon, color: color, size: 28),
                   ),
                   const SizedBox(height: 12),
                   Text(
@@ -401,12 +369,15 @@ class _BidashboardState extends State<Bidashboard>
                     style: TextStyle(
                       fontSize: 28,
                       fontWeight: FontWeight.bold,
-                      color: color.shade800,
+                      color: HeritagePalette.forest,
                     ),
                   ),
                   Text(
                     title,
-                    style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: HeritagePalette.muted,
+                    ),
                     textAlign: TextAlign.center,
                   ),
                   Container(
@@ -416,12 +387,12 @@ class _BidashboardState extends State<Bidashboard>
                       vertical: 2,
                     ),
                     decoration: BoxDecoration(
-                      color: color.shade100,
-                      borderRadius: BorderRadius.circular(12),
+                      color: color.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(4),
                     ),
                     child: Text(
                       subtitle,
-                      style: TextStyle(fontSize: 10, color: color.shade700),
+                      style: TextStyle(fontSize: 10, color: color),
                     ),
                   ),
                 ],
@@ -436,7 +407,7 @@ class _BidashboardState extends State<Bidashboard>
   Widget _buildMonthlyDistributionChart() {
     return Card(
       elevation: 0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       color: Colors.white,
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -448,12 +419,8 @@ class _BidashboardState extends State<Bidashboard>
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [Colors.purple.shade400, Colors.purple.shade600],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(12),
+                    color: HeritagePalette.red,
+                    borderRadius: BorderRadius.circular(6),
                   ),
                   child: const Icon(
                     Icons.pie_chart,
@@ -509,7 +476,7 @@ class _BidashboardState extends State<Bidashboard>
   Widget _buildSubmissionsTrend() {
     return Card(
       elevation: 0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       color: Colors.white,
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -521,12 +488,8 @@ class _BidashboardState extends State<Bidashboard>
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [Colors.green.shade400, Colors.green.shade600],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(12),
+                    color: HeritagePalette.forest,
+                    borderRadius: BorderRadius.circular(6),
                   ),
                   child: const Icon(
                     Icons.trending_up,
@@ -624,7 +587,7 @@ class _BidashboardState extends State<Bidashboard>
   Widget _buildArtifactsBySiteChart() {
     return Card(
       elevation: 0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       color: Colors.white,
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -636,16 +599,12 @@ class _BidashboardState extends State<Bidashboard>
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [Colors.orange.shade400, Colors.orange.shade600],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(12),
+                    color: HeritagePalette.sun,
+                    borderRadius: BorderRadius.circular(6),
                   ),
                   child: const Icon(
                     Icons.bar_chart,
-                    color: Colors.white,
+                    color: HeritagePalette.ink,
                     size: 20,
                   ),
                 ),
@@ -702,16 +661,18 @@ class _BidashboardState extends State<Bidashboard>
                                           vertical: 2,
                                         ),
                                         decoration: BoxDecoration(
-                                          color: Colors.green.shade100,
+                                          color: HeritagePalette.sun.withValues(
+                                            alpha: 0.2,
+                                          ),
                                           borderRadius: BorderRadius.circular(
-                                            12,
+                                            4,
                                           ),
                                         ),
                                         child: Text(
                                           '$count',
                                           style: TextStyle(
                                             fontWeight: FontWeight.bold,
-                                            color: Colors.green.shade700,
+                                            color: HeritagePalette.forest,
                                             fontSize: 12,
                                           ),
                                         ),
@@ -725,7 +686,7 @@ class _BidashboardState extends State<Bidashboard>
                                       value: animValue,
                                       backgroundColor: Colors.grey.shade200,
                                       valueColor: AlwaysStoppedAnimation<Color>(
-                                        Colors.green.shade400,
+                                        HeritagePalette.forest,
                                       ),
                                       minHeight: 10,
                                     ),
@@ -747,7 +708,7 @@ class _BidashboardState extends State<Bidashboard>
   Widget _buildTopContributors() {
     return Card(
       elevation: 0,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(24)),
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
       color: Colors.white,
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -759,12 +720,8 @@ class _BidashboardState extends State<Bidashboard>
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [Colors.purple.shade400, Colors.purple.shade600],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    ),
-                    borderRadius: BorderRadius.circular(12),
+                    color: HeritagePalette.ink,
+                    borderRadius: BorderRadius.circular(6),
                   ),
                   child: const Icon(
                     Icons.people,
@@ -813,14 +770,7 @@ class _BidashboardState extends State<Bidashboard>
                                 width: 40,
                                 height: 40,
                                 decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    colors: [
-                                      Colors.green.shade400,
-                                      Colors.green.shade600,
-                                    ],
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
-                                  ),
+                                  color: HeritagePalette.forest,
                                   shape: BoxShape.circle,
                                 ),
                                 child: Center(
@@ -861,21 +811,14 @@ class _BidashboardState extends State<Bidashboard>
                                   vertical: 6,
                                 ),
                                 decoration: BoxDecoration(
-                                  gradient: LinearGradient(
-                                    colors: [
-                                      Colors.amber.shade400,
-                                      Colors.amber.shade600,
-                                    ],
-                                    begin: Alignment.topLeft,
-                                    end: Alignment.bottomRight,
-                                  ),
-                                  borderRadius: BorderRadius.circular(20),
+                                  color: HeritagePalette.sun,
+                                  borderRadius: BorderRadius.circular(4),
                                 ),
                                 child: Text(
                                   '#${_topContributors.indexOf(contributor) + 1}',
                                   style: const TextStyle(
                                     fontWeight: FontWeight.bold,
-                                    color: Colors.white,
+                                    color: HeritagePalette.ink,
                                     fontSize: 12,
                                   ),
                                 ),
@@ -958,12 +901,9 @@ class _BidashboardState extends State<Bidashboard>
 
     return Container(
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [Colors.green.shade50, Colors.green.shade100],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(24),
+        color: HeritagePalette.surface,
+        border: Border.all(color: HeritagePalette.rule),
+        borderRadius: BorderRadius.circular(8),
       ),
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -975,19 +915,23 @@ class _BidashboardState extends State<Bidashboard>
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.amber.shade100,
-                    borderRadius: BorderRadius.circular(16),
+                    color: HeritagePalette.sun.withValues(alpha: 0.18),
+                    borderRadius: BorderRadius.circular(6),
                   ),
                   child: const Icon(
                     Icons.lightbulb,
-                    color: Colors.amber,
+                    color: HeritagePalette.ink,
                     size: 28,
                   ),
                 ),
                 const SizedBox(width: 16),
-                const Text(
-                  'Key Insights & Recommendations',
-                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                Text(
+                  'Key insights',
+                  style: GoogleFonts.newsreader(
+                    fontSize: 22,
+                    fontWeight: FontWeight.w700,
+                    color: HeritagePalette.forest,
+                  ),
                 ),
               ],
             ),
@@ -995,7 +939,7 @@ class _BidashboardState extends State<Bidashboard>
             GridView.count(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              crossAxisCount: 2,
+              crossAxisCount: MediaQuery.sizeOf(context).width < 600 ? 1 : 2,
               crossAxisSpacing: 16,
               mainAxisSpacing: 16,
               childAspectRatio: 2.2,
@@ -1003,7 +947,7 @@ class _BidashboardState extends State<Bidashboard>
                 _buildEnhancedInsightCard(
                   '📈 Growth Trend',
                   trendText,
-                  Colors.blue,
+                  HeritagePalette.red,
                   Icons.trending_up,
                 ),
                 _buildEnhancedInsightCard(
@@ -1011,7 +955,7 @@ class _BidashboardState extends State<Bidashboard>
                   topSite != 'None'
                       ? '$topSite leads with $topSiteCount artifact${topSiteCount != 1 ? 's' : ''}'
                       : 'No artifacts submitted yet',
-                  Colors.orange,
+                  HeritagePalette.sun,
                   Icons.emoji_events,
                 ),
                 _buildEnhancedInsightCard(
@@ -1019,13 +963,13 @@ class _BidashboardState extends State<Bidashboard>
                   totalContributors > 0
                       ? '$totalContributors active contributor${totalContributors != 1 ? 's' : ''} driving engagement'
                       : 'Be the first contributor!',
-                  Colors.purple,
+                  HeritagePalette.ink,
                   Icons.people,
                 ),
                 _buildEnhancedInsightCard(
                   '🎯 Recommendation',
                   recommendationText,
-                  Colors.green,
+                  HeritagePalette.forest,
                   Icons.lightbulb_outline,
                 ),
               ],
@@ -1039,31 +983,25 @@ class _BidashboardState extends State<Bidashboard>
   Widget _buildEnhancedInsightCard(
     String title,
     String description,
-    MaterialColor color,
+    Color color,
     IconData icon,
   ) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: color.withOpacity(0.1),
-            blurRadius: 8,
-            offset: const Offset(0, 2),
-          ),
-        ],
+        color: HeritagePalette.surface,
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: HeritagePalette.rule),
       ),
       child: Row(
         children: [
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
-              borderRadius: BorderRadius.circular(12),
+              color: color.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(4),
             ),
-            child: Icon(icon, color: color.shade700, size: 24),
+            child: Icon(icon, color: color, size: 24),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -1074,7 +1012,7 @@ class _BidashboardState extends State<Bidashboard>
                   title,
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
-                    color: color.shade800,
+                    color: HeritagePalette.forest,
                     fontSize: 13,
                   ),
                 ),
@@ -1386,15 +1324,11 @@ class PieChartPainter extends CustomPainter {
     final radius = size.width / 3;
     double startAngle = -math.pi / 2;
 
-    final colors = [
-      Colors.blue.shade400,
-      Colors.green.shade400,
-      Colors.orange.shade400,
-      Colors.purple.shade400,
-      Colors.red.shade400,
-      Colors.teal.shade400,
-      Colors.pink.shade400,
-      Colors.indigo.shade400,
+    const colors = [
+      HeritagePalette.forest,
+      HeritagePalette.red,
+      HeritagePalette.sun,
+      HeritagePalette.ink,
     ];
 
     // Draw pie slices
