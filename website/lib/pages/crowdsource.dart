@@ -438,9 +438,9 @@ class _CrowdsourceState extends State<Crowdsource> {
   Widget build(BuildContext context) {
     return Theme(
       data: Theme.of(context).copyWith(
-        textTheme: Theme.of(context).textTheme.apply(
-          fontFamily: GoogleFonts.manrope().fontFamily,
-        ),
+        textTheme: Theme.of(
+          context,
+        ).textTheme.apply(fontFamily: GoogleFonts.manrope().fontFamily),
       ),
       child: Scaffold(
         backgroundColor: _paper,
@@ -506,7 +506,7 @@ class _CrowdsourceState extends State<Crowdsource> {
         const SizedBox(height: 24),
         const Divider(height: 1, color: _rule),
         const SizedBox(height: 28),
-        _sectionTitle('01', 'Place'),
+        _sectionTitle('', 'Place'),
         const SizedBox(height: 14),
         Row(
           children: [
@@ -576,7 +576,7 @@ class _CrowdsourceState extends State<Crowdsource> {
           },
         ),
         const SizedBox(height: 28),
-        _sectionTitle('02', 'Photo'),
+        _sectionTitle('', 'Photo'),
         const SizedBox(height: 14),
         GestureDetector(
           onTap: _selectedImage == null ? _pickImage : null,
@@ -656,7 +656,7 @@ class _CrowdsourceState extends State<Crowdsource> {
           ),
         ),
         const SizedBox(height: 28),
-        _sectionTitle('03', 'Story'),
+        _sectionTitle('', 'Story'),
         const SizedBox(height: 14),
         TextField(
           controller: _narrativeCtrl,
