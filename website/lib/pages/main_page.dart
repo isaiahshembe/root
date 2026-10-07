@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:website/pages/bidashboard.dart';
 import 'package:website/pages/crowdsource.dart';
 import 'package:website/pages/knowledgegraph.dart';
@@ -12,6 +13,12 @@ class MainPage extends StatefulWidget {
 }
 
 class _MainPageState extends State<MainPage> {
+  static const _canvas = Color(0xFFF7F9F6);
+  static const _forest = Color(0xFF174A3B);
+  static const _red = Color(0xFFCE342E);
+  static const _sun = Color(0xFFFFC928);
+  static const _ink = Color(0xFF202622);
+
   int _selectedIndex = 0;
 
   // Use late initialization or getter methods instead of creating instances directly
@@ -65,18 +72,19 @@ class _MainPageState extends State<MainPage> {
         builder: (context, constraints) {
           final isMobile = constraints.maxWidth < 800;
           return Scaffold(
-            backgroundColor: const Color(0xFFF5F2E9),
+            backgroundColor: _canvas,
             appBar: isMobile
                 ? AppBar(
                     toolbarHeight: 56,
-                    backgroundColor: const Color(0xFFF5F2E9),
-                    foregroundColor: const Color(0xFF24473C),
+                    backgroundColor: _canvas,
+                    foregroundColor: _forest,
                     elevation: 0,
                     title: Text(
-                      _navItems[_selectedIndex].title,
-                      style: const TextStyle(
-                        fontFamily: 'Georgia',
-                        fontSize: 20,
+                      _selectedIndex == 0
+                          ? 'Living Heritage Uganda'
+                          : _navItems[_selectedIndex].title,
+                      style: GoogleFonts.newsreader(
+                        fontSize: 21,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -92,10 +100,10 @@ class _MainPageState extends State<MainPage> {
                         vertical: 16,
                       ),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFF5F2E9),
+                        color: _canvas,
                         border: Border(
                           bottom: BorderSide(
-                            color: Colors.green.shade100,
+                            color: const Color(0xFFD8DFD9),
                             width: 1,
                           ),
                         ),
@@ -131,8 +139,8 @@ class _MainPageState extends State<MainPage> {
             bottomNavigationBar: isMobile
                 ? NavigationBar(
                     height: 68,
-                    backgroundColor: const Color(0xFFFBFAF6),
-                    indicatorColor: const Color(0xFFE5E9DF),
+                    backgroundColor: Colors.white,
+                    indicatorColor: const Color(0xFFFFEDAA),
                     selectedIndex: _selectedIndex,
                     onDestinationSelected: (index) {
                       setState(() => _selectedIndex = index);
@@ -158,22 +166,20 @@ class _MainPageState extends State<MainPage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          'Uganda Heritage Data Warehouse',
-          style: TextStyle(
-            fontSize: 18,
-            fontWeight: FontWeight.bold,
-            color: Colors.green.shade800,
-            letterSpacing: -0.3,
+          'Living Heritage Uganda',
+          style: GoogleFonts.newsreader(
+            fontSize: 22,
+            fontWeight: FontWeight.w700,
+            color: _forest,
           ),
         ),
         const SizedBox(height: 4),
         Text(
-          'Semantic-Aware Multimodal Knowledge Graph',
-          style: TextStyle(
-            fontSize: 12,
-            color: Colors.green.shade600,
-            fontWeight: FontWeight.w500,
-            letterSpacing: 0.2,
+          'CULTURAL FUTURES  /  TOURISM HUB',
+          style: GoogleFonts.spaceGrotesk(
+            fontSize: 10,
+            color: _ink,
+            fontWeight: FontWeight.w600,
           ),
         ),
       ],
@@ -211,16 +217,12 @@ class _MainPageState extends State<MainPage> {
       },
       style: TextButton.styleFrom(
         padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-        backgroundColor: isSelected
-            ? Colors.green.shade100
-            : Colors.transparent,
-        foregroundColor: isSelected
-            ? Colors.green.shade800
-            : Colors.green.shade700,
+        backgroundColor: isSelected ? _red : Colors.transparent,
+        foregroundColor: isSelected ? Colors.white : _forest,
         shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(30),
+          borderRadius: BorderRadius.circular(6),
           side: BorderSide(
-            color: isSelected ? Colors.green.shade300 : Colors.transparent,
+            color: isSelected ? _red : Colors.transparent,
             width: 1,
           ),
         ),
@@ -228,10 +230,10 @@ class _MainPageState extends State<MainPage> {
       ),
       child: Text(
         item.title,
-        style: TextStyle(
+        style: GoogleFonts.manrope(
           fontSize: 14,
           fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-          color: isSelected ? Colors.green.shade800 : Colors.green.shade700,
+          color: isSelected ? Colors.white : _forest,
         ),
       ),
     );

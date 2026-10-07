@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:typed_data';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'package:uuid/uuid.dart';
@@ -162,11 +163,12 @@ class Crowdsource extends StatefulWidget {
 }
 
 class _CrowdsourceState extends State<Crowdsource> {
-  static const _paper = Color(0xFFF5F2E9);
-  static const _forest = Color(0xFF24473C);
-  static const _clay = Color(0xFFB85E43);
-  static const _ink = Color(0xFF242B27);
-  static const _rule = Color(0xFFD9D5C9);
+  static const _paper = Color(0xFFF7F9F6);
+  static const _forest = Color(0xFF174A3B);
+  static const _clay = Color(0xFFCE342E);
+  static const _ink = Color(0xFF202622);
+  static const _rule = Color(0xFFD8DFD9);
+  static const _sun = Color(0xFFFFC928);
 
   final SupabaseService _supabase = SupabaseService();
   final _latitudeCtrl = TextEditingController();
@@ -434,25 +436,32 @@ class _CrowdsourceState extends State<Crowdsource> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: _paper,
-      body: LayoutBuilder(
-        builder: (context, constraints) {
-          return SingleChildScrollView(
-            padding: EdgeInsets.fromLTRB(
-              constraints.maxWidth < 600 ? 20 : 40,
-              28,
-              constraints.maxWidth < 600 ? 20 : 40,
-              40,
-            ),
-            child: Center(
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 760),
-                child: _buildForm(),
+    return Theme(
+      data: Theme.of(context).copyWith(
+        textTheme: Theme.of(context).textTheme.apply(
+          fontFamily: GoogleFonts.manrope().fontFamily,
+        ),
+      ),
+      child: Scaffold(
+        backgroundColor: _paper,
+        body: LayoutBuilder(
+          builder: (context, constraints) {
+            return SingleChildScrollView(
+              padding: EdgeInsets.fromLTRB(
+                constraints.maxWidth < 600 ? 20 : 40,
+                28,
+                constraints.maxWidth < 600 ? 20 : 40,
+                40,
               ),
-            ),
-          );
-        },
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 760),
+                  child: _buildForm(),
+                ),
+              ),
+            );
+          },
+        ),
       ),
     );
   }
@@ -461,22 +470,32 @@ class _CrowdsourceState extends State<Crowdsource> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'FIELD NOTES  /  UGANDA',
-          style: TextStyle(
-            color: _clay,
-            fontSize: 11,
-            fontWeight: FontWeight.w700,
-          ),
+        Row(
+          children: [
+            _flagMark(_clay),
+            const SizedBox(width: 3),
+            _flagMark(_sun),
+            const SizedBox(width: 3),
+            _flagMark(_ink),
+            const SizedBox(width: 10),
+            Text(
+              'LIVING HERITAGE  /  UGANDA',
+              style: GoogleFonts.spaceGrotesk(
+                color: _forest,
+                fontSize: 11,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 12),
         Text(
           'Share what you know',
-          style: TextStyle(
+          style: GoogleFonts.newsreader(
             color: _forest,
-            fontFamily: 'Georgia',
             fontSize: 32,
             fontWeight: FontWeight.w700,
+            height: 1.1,
           ),
         ),
         const SizedBox(height: 6),
@@ -725,11 +744,20 @@ class _CrowdsourceState extends State<Crowdsource> {
         ),
       );
 
+  Widget _flagMark(Color color) => Container(
+    width: 14,
+    height: 5,
+    decoration: BoxDecoration(
+      color: color,
+      borderRadius: BorderRadius.circular(2),
+    ),
+  );
+
   Widget _sectionTitle(String number, String title) => Row(
     children: [
       Text(
         number,
-        style: const TextStyle(
+        style: GoogleFonts.spaceGrotesk(
           color: _clay,
           fontSize: 12,
           fontWeight: FontWeight.w700,
@@ -738,9 +766,8 @@ class _CrowdsourceState extends State<Crowdsource> {
       const SizedBox(width: 10),
       Text(
         title,
-        style: const TextStyle(
+        style: GoogleFonts.newsreader(
           color: _forest,
-          fontFamily: 'Georgia',
           fontSize: 20,
           fontWeight: FontWeight.w700,
         ),

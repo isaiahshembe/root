@@ -1,11 +1,11 @@
 {
-    "name": "website",
-    "short_name": "website",
+    "name": "Living Heritage Uganda",
+    "short_name": "Living Heritage",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#F7F9F6",
+    "theme_color": "#174A3B",
+    "description": "Community stories and living heritage from Uganda.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

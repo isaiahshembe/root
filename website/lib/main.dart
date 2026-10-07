@@ -105,7 +105,7 @@ class _InitializationAppState extends State<InitializationApp> {
     }
 
     return MaterialApp(
-      title: 'Uganda Heritage Data Warehouse',
+      title: 'Living Heritage Uganda',
       theme: ThemeData(
         // Your original theme restored exactly as you had it
         scaffoldBackgroundColor: Colors.green.withValues(alpha: 0.3),
