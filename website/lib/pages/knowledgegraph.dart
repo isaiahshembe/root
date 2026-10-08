@@ -30,8 +30,8 @@ class _KnowledgegraphState extends State<Knowledgegraph>
   int _totalRelationships = 0;
 
   // Graph dimensions
-  double _graphWidth = 800;
-  double _graphHeight = 600;
+  double _graphWidth = 1000;
+  double _graphHeight = 800;
 
   @override
   void initState() {
@@ -242,7 +242,10 @@ class _KnowledgegraphState extends State<Knowledgegraph>
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [HeritagePalette.canvas, HeritagePalette.forest.withOpacity(0.1)],
+                  colors: [
+                    HeritagePalette.canvas,
+                    HeritagePalette.forest.withOpacity(0.1),
+                  ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
@@ -261,7 +264,11 @@ class _KnowledgegraphState extends State<Knowledgegraph>
                   const SizedBox(height: 8),
                   Text(
                     'Interactive visualization of the semantic relationships between botanical nodes, artifact nodes, and cultural narrative edges. Click on nodes and edges to explore provenance and cultural context.',
-                    style: GoogleFonts.spaceGrotesk(color: HeritagePalette.muted, fontSize: 13, height: 1.4),
+                    style: GoogleFonts.spaceGrotesk(
+                      color: HeritagePalette.muted,
+                      fontSize: 13,
+                      height: 1.4,
+                    ),
                   ),
                 ],
               ),
@@ -347,7 +354,11 @@ class _KnowledgegraphState extends State<Knowledgegraph>
           child: Center(
             child: Column(
               children: [
-                Icon(Icons.insights, size: 48, color: HeritagePalette.forest.withOpacity(0.4)),
+                Icon(
+                  Icons.insights,
+                  size: 48,
+                  color: HeritagePalette.forest.withOpacity(0.4),
+                ),
                 const SizedBox(height: 16),
                 Text(
                   'No data yet',
@@ -379,41 +390,43 @@ class _KnowledgegraphState extends State<Knowledgegraph>
               children: [
                 Icon(Icons.share, color: HeritagePalette.forest, size: 28),
                 const SizedBox(width: 8),
-                Text(
-                  'Knowledge Graph Visualization',
-                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                    fontWeight: FontWeight.bold,
-                    color: HeritagePalette.forest,
+                Expanded(
+                  child: Text(
+                    'Knowledge Graph Visualization',
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                      color: HeritagePalette.forest,
+                    ),
                   ),
                 ),
-                const Spacer(),
+                // const Spacer(),
                 Container(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
+                    horizontal: 6,
                     vertical: 6,
                   ),
                   decoration: BoxDecoration(
                     color: HeritagePalette.canvas,
                     borderRadius: BorderRadius.circular(20),
                   ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Icon(
-                        Icons.zoom_in,
-                        size: 16,
-                        color: HeritagePalette.forest,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        'Pinch to zoom | Drag to pan',
-                        style: TextStyle(
-                          fontSize: 11,
-                          color: HeritagePalette.forest,
-                        ),
-                      ),
-                    ],
-                  ),
+                  // child: Row(
+                  //   mainAxisSize: MainAxisSize.min,
+                  //   children: [
+                  //     Icon(
+                  //       Icons.zoom_in,
+                  //       size: 16,
+                  //       color: HeritagePalette.forest,
+                  //     ),
+                  //     const SizedBox(width: 4),
+                  //     Text(
+                  //       'Pinch to zoom | Drag to pan',
+                  //       style: TextStyle(
+                  //         fontSize: 11,
+                  //         color: HeritagePalette.forest,
+                  //       ),
+                  //     ),
+                  //   ],
+                  // ),
                 ),
               ],
             ),
@@ -431,7 +444,7 @@ class _KnowledgegraphState extends State<Knowledgegraph>
                   minScale: 0.3,
                   maxScale: 3.0,
                   boundaryMargin: const EdgeInsets.all(50),
-                  constrained: true,
+                  constrained: false,
                   child: SizedBox(
                     width: _graphWidth,
                     height: _graphHeight,
@@ -465,7 +478,7 @@ class _KnowledgegraphState extends State<Knowledgegraph>
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    'Scroll or pinch to zoom. Drag to pan and explore the graph.',
+                    'Scroll or pinch to zoom. Drag to pan.',
                     style: TextStyle(fontSize: 11, color: Colors.grey.shade600),
                   ),
                 ],
@@ -821,10 +834,7 @@ class _KnowledgegraphState extends State<Knowledgegraph>
             children: [
               Text(
                 title,
-                style: TextStyle(
-                  fontWeight: FontWeight.bold,
-                  color: color,
-                ),
+                style: TextStyle(fontWeight: FontWeight.bold, color: color),
               ),
               const SizedBox(height: 4),
               Text(
@@ -1095,7 +1105,9 @@ class EdgePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = isSelected ? HeritagePalette.red : HeritagePalette.forest.withOpacity(0.3)
+      ..color = isSelected
+          ? HeritagePalette.red
+          : HeritagePalette.forest.withOpacity(0.3)
       ..strokeWidth = isSelected ? 3.0 : 2.0
       ..style = PaintingStyle.stroke;
 
