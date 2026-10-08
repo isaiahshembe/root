@@ -367,7 +367,7 @@ class _BidashboardState extends State<Bidashboard>
                   Text(
                     value,
                     style: TextStyle(
-                      fontSize: 28,
+                      fontSize: 15,
                       fontWeight: FontWeight.bold,
                       color: HeritagePalette.forest,
                     ),
