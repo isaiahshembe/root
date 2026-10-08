@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
+import 'package:website/src/heritage_theme.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 import 'dart:math' as math;
 
@@ -28,8 +30,8 @@ class _KnowledgegraphState extends State<Knowledgegraph>
   int _totalRelationships = 0;
 
   // Graph dimensions
-  double _graphWidth = 1000;
-  double _graphHeight = 800;
+  double _graphWidth = 800;
+  double _graphHeight = 600;
 
   @override
   void initState() {
@@ -192,6 +194,7 @@ class _KnowledgegraphState extends State<Knowledgegraph>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: HeritagePalette.canvas,
       body: LayoutBuilder(
         builder: (context, constraints) {
           final isMobile = constraints.maxWidth < 900;
@@ -239,7 +242,7 @@ class _KnowledgegraphState extends State<Knowledgegraph>
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [Colors.green.shade50, Colors.green.shade100],
+                  colors: [HeritagePalette.canvas, HeritagePalette.forest.withOpacity(0.1)],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
@@ -252,13 +255,13 @@ class _KnowledgegraphState extends State<Knowledgegraph>
                     'Ontology-Driven Multimodal Knowledge Graph',
                     style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                       fontWeight: FontWeight.bold,
-                      color: Colors.green.shade800,
+                      color: HeritagePalette.forest,
                     ),
                   ),
                   const SizedBox(height: 8),
                   Text(
                     'Interactive visualization of the semantic relationships between botanical nodes, artifact nodes, and cultural narrative edges. Click on nodes and edges to explore provenance and cultural context.',
-                    style: TextStyle(color: Colors.green.shade700, height: 1.4),
+                    style: GoogleFonts.spaceGrotesk(color: HeritagePalette.muted, fontSize: 13, height: 1.4),
                   ),
                 ],
               ),
@@ -279,11 +282,11 @@ class _KnowledgegraphState extends State<Knowledgegraph>
           child: Center(
             child: Column(
               children: [
-                CircularProgressIndicator(color: Colors.green.shade600),
+                CircularProgressIndicator(color: HeritagePalette.muted),
                 const SizedBox(height: 16),
                 Text(
                   'Loading knowledge graph data...',
-                  style: TextStyle(color: Colors.green.shade600),
+                  style: TextStyle(color: HeritagePalette.muted),
                 ),
               ],
             ),
@@ -324,7 +327,7 @@ class _KnowledgegraphState extends State<Knowledgegraph>
                 ElevatedButton(
                   onPressed: _loadGraphData,
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green.shade700,
+                    backgroundColor: HeritagePalette.forest,
                   ),
                   child: const Text('Retry'),
                 ),
@@ -344,7 +347,7 @@ class _KnowledgegraphState extends State<Knowledgegraph>
           child: Center(
             child: Column(
               children: [
-                Icon(Icons.insights, size: 48, color: Colors.green.shade400),
+                Icon(Icons.insights, size: 48, color: HeritagePalette.forest.withOpacity(0.4)),
                 const SizedBox(height: 16),
                 Text(
                   'No data yet',
@@ -374,13 +377,13 @@ class _KnowledgegraphState extends State<Knowledgegraph>
           children: [
             Row(
               children: [
-                Icon(Icons.share, color: Colors.green.shade700, size: 28),
+                Icon(Icons.share, color: HeritagePalette.forest, size: 28),
                 const SizedBox(width: 8),
                 Text(
                   'Knowledge Graph Visualization',
                   style: Theme.of(context).textTheme.titleLarge?.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: Colors.green.shade800,
+                    color: HeritagePalette.forest,
                   ),
                 ),
                 const Spacer(),
@@ -390,7 +393,7 @@ class _KnowledgegraphState extends State<Knowledgegraph>
                     vertical: 6,
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.blue.shade50,
+                    color: HeritagePalette.canvas,
                     borderRadius: BorderRadius.circular(20),
                   ),
                   child: Row(
@@ -399,14 +402,14 @@ class _KnowledgegraphState extends State<Knowledgegraph>
                       Icon(
                         Icons.zoom_in,
                         size: 16,
-                        color: Colors.blue.shade700,
+                        color: HeritagePalette.forest,
                       ),
                       const SizedBox(width: 4),
                       Text(
                         'Pinch to zoom | Drag to pan',
                         style: TextStyle(
                           fontSize: 11,
-                          color: Colors.blue.shade700,
+                          color: HeritagePalette.forest,
                         ),
                       ),
                     ],
@@ -418,9 +421,9 @@ class _KnowledgegraphState extends State<Knowledgegraph>
             Container(
               height: isMobile ? 500 : 600,
               decoration: BoxDecoration(
-                border: Border.all(color: Colors.green.shade200),
+                border: Border.all(color: HeritagePalette.rule),
                 borderRadius: BorderRadius.circular(12),
-                color: Colors.green.shade50,
+                color: HeritagePalette.canvas,
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(12),
@@ -428,7 +431,7 @@ class _KnowledgegraphState extends State<Knowledgegraph>
                   minScale: 0.3,
                   maxScale: 3.0,
                   boundaryMargin: const EdgeInsets.all(50),
-                  constrained: false,
+                  constrained: true,
                   child: SizedBox(
                     width: _graphWidth,
                     height: _graphHeight,
@@ -588,9 +591,9 @@ class _KnowledgegraphState extends State<Knowledgegraph>
   Color _getNodeColor(NodeType type) {
     switch (type) {
       case NodeType.botanical:
-        return Colors.green.shade600;
+        return HeritagePalette.muted;
       case NodeType.artifact:
-        return Colors.orange.shade600;
+        return HeritagePalette.sun;
     }
   }
 
@@ -620,13 +623,13 @@ class _KnowledgegraphState extends State<Knowledgegraph>
               children: [
                 Row(
                   children: [
-                    Icon(Icons.schema, color: Colors.green.shade700, size: 28),
+                    Icon(Icons.schema, color: HeritagePalette.forest, size: 28),
                     const SizedBox(width: 8),
                     Text(
                       'Knowledge Graph Schema',
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.bold,
-                        color: Colors.green.shade800,
+                        color: HeritagePalette.forest,
                       ),
                     ),
                   ],
@@ -636,21 +639,21 @@ class _KnowledgegraphState extends State<Knowledgegraph>
                   Icons.forest,
                   'Botanical Nodes',
                   'Heritage sites, plant species, and botanical specimens',
-                  Colors.green,
+                  HeritagePalette.forest,
                 ),
                 const SizedBox(height: 16),
                 _buildSchemaItem(
                   Icons.photo_camera,
                   'Artifact Nodes',
                   'Crowdsourced images, cultural narratives, provenance metadata',
-                  Colors.orange,
+                  HeritagePalette.sun,
                 ),
                 const SizedBox(height: 16),
                 _buildSchemaItem(
                   Icons.share,
                   'Cultural Edges',
                   'Semantic relationships: "collected_at", "related_region"',
-                  Colors.purple,
+                  HeritagePalette.red,
                 ),
               ],
             ),
@@ -674,7 +677,7 @@ class _KnowledgegraphState extends State<Knowledgegraph>
                   children: [
                     Icon(
                       Icons.show_chart,
-                      color: Colors.green.shade700,
+                      color: HeritagePalette.forest,
                       size: 28,
                     ),
                     const SizedBox(width: 8),
@@ -682,7 +685,7 @@ class _KnowledgegraphState extends State<Knowledgegraph>
                       'Graph Statistics',
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.bold,
-                        color: Colors.green.shade800,
+                        color: HeritagePalette.forest,
                       ),
                     ),
                   ],
@@ -691,7 +694,7 @@ class _KnowledgegraphState extends State<Knowledgegraph>
                 Container(
                   padding: const EdgeInsets.all(12),
                   decoration: BoxDecoration(
-                    color: Colors.green.shade50,
+                    color: HeritagePalette.canvas,
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Column(
@@ -706,13 +709,13 @@ class _KnowledgegraphState extends State<Knowledgegraph>
                                 style: TextStyle(
                                   fontSize: 24,
                                   fontWeight: FontWeight.bold,
-                                  color: Colors.green.shade800,
+                                  color: HeritagePalette.forest,
                                 ),
                               ),
                               Text(
                                 'Heritage Sites',
                                 style: TextStyle(
-                                  color: Colors.green.shade600,
+                                  color: HeritagePalette.muted,
                                   fontSize: 12,
                                 ),
                               ),
@@ -721,7 +724,7 @@ class _KnowledgegraphState extends State<Knowledgegraph>
                           Container(
                             width: 1,
                             height: 40,
-                            color: Colors.green.shade200,
+                            color: HeritagePalette.rule,
                           ),
                           Column(
                             children: [
@@ -730,13 +733,13 @@ class _KnowledgegraphState extends State<Knowledgegraph>
                                 style: TextStyle(
                                   fontSize: 24,
                                   fontWeight: FontWeight.bold,
-                                  color: Colors.orange.shade800,
+                                  color: HeritagePalette.sun,
                                 ),
                               ),
                               Text(
                                 'Artifacts',
                                 style: TextStyle(
-                                  color: Colors.green.shade600,
+                                  color: HeritagePalette.muted,
                                   fontSize: 12,
                                 ),
                               ),
@@ -745,7 +748,7 @@ class _KnowledgegraphState extends State<Knowledgegraph>
                           Container(
                             width: 1,
                             height: 40,
-                            color: Colors.green.shade200,
+                            color: HeritagePalette.rule,
                           ),
                           Column(
                             children: [
@@ -754,13 +757,13 @@ class _KnowledgegraphState extends State<Knowledgegraph>
                                 style: TextStyle(
                                   fontSize: 24,
                                   fontWeight: FontWeight.bold,
-                                  color: Colors.purple.shade800,
+                                  color: HeritagePalette.red,
                                 ),
                               ),
                               Text(
                                 'Relationships',
                                 style: TextStyle(
-                                  color: Colors.green.shade600,
+                                  color: HeritagePalette.muted,
                                   fontSize: 12,
                                 ),
                               ),
@@ -798,7 +801,7 @@ class _KnowledgegraphState extends State<Knowledgegraph>
     IconData icon,
     String title,
     String description,
-    MaterialColor color,
+    Color color,
   ) {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -806,10 +809,10 @@ class _KnowledgegraphState extends State<Knowledgegraph>
         Container(
           padding: const EdgeInsets.all(8),
           decoration: BoxDecoration(
-            color: color.shade50,
+            color: color.withOpacity(0.15),
             borderRadius: BorderRadius.circular(8),
           ),
-          child: Icon(icon, size: 24, color: color.shade700),
+          child: Icon(icon, size: 24, color: color),
         ),
         const SizedBox(width: 12),
         Expanded(
@@ -820,7 +823,7 @@ class _KnowledgegraphState extends State<Knowledgegraph>
                 title,
                 style: TextStyle(
                   fontWeight: FontWeight.bold,
-                  color: color.shade800,
+                  color: color,
                 ),
               ),
               const SizedBox(height: 4),
@@ -849,13 +852,13 @@ class _KnowledgegraphState extends State<Knowledgegraph>
           children: [
             Row(
               children: [
-                Icon(Icons.info_outline, color: Colors.green.shade700),
+                Icon(Icons.info_outline, color: HeritagePalette.forest),
                 const SizedBox(width: 8),
                 Text(
                   'Selected ${node.type == NodeType.botanical ? 'Heritage Site' : 'Artifact'}',
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
-                    color: Colors.green.shade800,
+                    color: HeritagePalette.forest,
                   ),
                 ),
               ],
@@ -904,12 +907,12 @@ class _KnowledgegraphState extends State<Knowledgegraph>
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.green.shade50,
+                color: HeritagePalette.canvas,
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Text(
                 node.description,
-                style: TextStyle(fontSize: 12, color: Colors.green.shade700),
+                style: TextStyle(fontSize: 12, color: HeritagePalette.forest),
               ),
             ),
             if (node.type == NodeType.botanical && node.artifactCount > 0)
@@ -918,7 +921,7 @@ class _KnowledgegraphState extends State<Knowledgegraph>
                 child: Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: Colors.orange.shade50,
+                    color: HeritagePalette.canvas,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Row(
@@ -926,14 +929,14 @@ class _KnowledgegraphState extends State<Knowledgegraph>
                       Icon(
                         Icons.photo_library,
                         size: 16,
-                        color: Colors.orange.shade700,
+                        color: HeritagePalette.sun,
                       ),
                       const SizedBox(width: 8),
                       Text(
                         '${node.artifactCount} artifact${node.artifactCount != 1 ? 's' : ''} collected here',
                         style: TextStyle(
                           fontSize: 11,
-                          color: Colors.orange.shade700,
+                          color: HeritagePalette.sun,
                         ),
                       ),
                     ],
@@ -962,13 +965,13 @@ class _KnowledgegraphState extends State<Knowledgegraph>
           children: [
             Row(
               children: [
-                Icon(Icons.share, color: Colors.green.shade700),
+                Icon(Icons.share, color: HeritagePalette.forest),
                 const SizedBox(width: 8),
                 Text(
                   'Selected Relationship',
                   style: TextStyle(
                     fontWeight: FontWeight.bold,
-                    color: Colors.green.shade800,
+                    color: HeritagePalette.forest,
                   ),
                 ),
               ],
@@ -977,7 +980,7 @@ class _KnowledgegraphState extends State<Knowledgegraph>
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: Colors.purple.shade50,
+                color: HeritagePalette.canvas,
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Column(
@@ -992,7 +995,7 @@ class _KnowledgegraphState extends State<Knowledgegraph>
                           textAlign: TextAlign.center,
                         ),
                       ),
-                      Icon(Icons.arrow_forward, color: Colors.purple.shade700),
+                      Icon(Icons.arrow_forward, color: HeritagePalette.red),
                       Expanded(
                         child: Text(
                           targetNode.name,
@@ -1009,7 +1012,7 @@ class _KnowledgegraphState extends State<Knowledgegraph>
                       vertical: 4,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.purple.shade100,
+                      color: HeritagePalette.rule,
                       borderRadius: BorderRadius.circular(16),
                     ),
                     child: Text(
@@ -1017,7 +1020,7 @@ class _KnowledgegraphState extends State<Knowledgegraph>
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w500,
-                        color: Colors.purple.shade700,
+                        color: HeritagePalette.red,
                       ),
                     ),
                   ),
@@ -1092,7 +1095,7 @@ class EdgePainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final paint = Paint()
-      ..color = isSelected ? Colors.purple.shade700 : Colors.green.shade300
+      ..color = isSelected ? HeritagePalette.red : HeritagePalette.forest.withOpacity(0.3)
       ..strokeWidth = isSelected ? 3.0 : 2.0
       ..style = PaintingStyle.stroke;
 
@@ -1105,7 +1108,7 @@ class EdgePainter extends CustomPainter {
     // Draw animated dots for selected edges
     if (isSelected) {
       final dotPaint = Paint()
-        ..color = Colors.purple.shade700
+        ..color = HeritagePalette.red
         ..style = PaintingStyle.fill;
 
       final t = animation.value;
@@ -1121,7 +1124,7 @@ class EdgePainter extends CustomPainter {
       text: TextSpan(
         text: label,
         style: TextStyle(
-          color: isSelected ? Colors.purple.shade700 : Colors.green.shade600,
+          color: isSelected ? HeritagePalette.red : HeritagePalette.muted,
           fontSize: 10,
           fontWeight: FontWeight.w500,
         ),
