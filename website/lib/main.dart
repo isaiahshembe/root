@@ -28,9 +28,10 @@ class _InitializationAppState extends State<InitializationApp> {
 
     try {
       await Supabase.initialize(
-        url: 'https://dydljotghohsukyukpwp.supabase.co',
+        // url: 'https://dydljotghohsukyukpwp.supabase.co',
+        url: 'https://ojfkxgjrjivxrvqewlhr.supabase.co',
         anonKey:
-            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR5ZGxqb3RnaG9oc3VreXVrcHdwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUwMDI4MDcsImV4cCI6MjA5MDU3ODgwN30.MY-7eMX2g7SRku1NgPXMg17gmx4xVM7BLlNbK0C34ao',
+            'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9qZmt4Z2pyaml2eHJ2cWV3bGhyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzY5NjU1ODEsImV4cCI6MjA5MjU0MTU4MX0.1x9LrlAef5Wp10tb9XM0yquH4Eih_tccofnsGGup9ps',
       );
       setState(() {
         _isInitialized = true;
@@ -46,6 +47,7 @@ class _InitializationAppState extends State<InitializationApp> {
   Widget build(BuildContext context) {
     if (_errorMessage != null) {
       return MaterialApp(
+        debugShowCheckedModeBanner: false,
         theme: ThemeData(
           scaffoldBackgroundColor: Colors.green.withValues(alpha: 0.3),
           primarySwatch: Colors.green,
