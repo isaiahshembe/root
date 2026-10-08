@@ -16,7 +16,7 @@ class Vlmidentification extends StatefulWidget {
 
 class _VlmidentificationState extends State<Vlmidentification> {
   static const String _inferenceUrl =
-      'https://andro777-med-tourism-vlm.hf.space/gradio_api/predict';
+      'https://proxy-server-8445892d.ahumain.cranecloud.io/predict';
 
   static const Map<String, String> _questionLabels = {
     'caption': 'Detailed Caption',
@@ -131,42 +131,52 @@ class _VlmidentificationState extends State<Vlmidentification> {
 
   Future<void> _askQuestion(String questionType) async {
     final bytes = _imageBytes;
-    if (bytes == null || _isLoading) return;
+    if (bytes == null) return;
 
     setState(() {
-      _activeQuestionType = questionType;
-      _answer = null;
-      _errorMessage = null;
       _isLoading = true;
+      _errorMessage = null;
+      _answer = null;
+      _activeQuestionType = questionType;
     });
 
     try {
-      final response = await http
-          .post(
-            Uri.parse(_inferenceUrl),
-            headers: const {'Content-Type': 'application/json'},
-            body: jsonEncode({
-              'data': [
-                'data:${_mimeType(bytes)};base64,${base64Encode(bytes)}',
-                questionType,
-              ],
-            }),
-          )
-          .timeout(const Duration(seconds: 120));
+      final uri = Uri.parse(_inferenceUrl);
+      final request = http.MultipartRequest('POST', uri);
+
+      // Add the text field for the question category
+      request.fields['question_type'] = questionType;
+
+      // Infer file extension from mime type
+      String ext = 'png';
+      try {
+        final mime = _mimeType(bytes);
+        ext = mime.split('/').last;
+      } catch (_) {}
+
+      // Add the bytes as a file inside multipart request
+      request.files.add(
+        http.MultipartFile.fromBytes(
+          'image', // Key matching our flask app: request.files.get("image")
+          bytes,
+          filename: 'image.$ext',
+        ),
+      );
+
+      final streamedResponse = await request.send().timeout(const Duration(seconds: 120));
+      final response = await http.Response.fromStream(streamedResponse);
 
       if (response.statusCode != 200) {
         throw Exception('Inference failed (${response.statusCode}).');
       }
 
       final decoded = jsonDecode(response.body);
-      if (decoded is! Map<String, dynamic> ||
-          decoded['data'] is! List ||
-          (decoded['data'] as List).isEmpty ||
-          (decoded['data'] as List).first is! String) {
-        throw const FormatException('Unexpected response from the model.');
+      if (decoded is! Map<String, dynamic> || decoded['success'] != true) {
+        throw const FormatException('Unexpected response or failure status from proxy server.');
       }
 
-      var answer = ((decoded['data'] as List).first as String).trim();
+      // Extract the result text
+      var answer = (decoded['result'] as String).trim();
       final prompt = _questionPrompts[questionType]!;
       if (answer.toLowerCase().startsWith(prompt.toLowerCase())) {
         answer = answer.substring(prompt.length).trim();
