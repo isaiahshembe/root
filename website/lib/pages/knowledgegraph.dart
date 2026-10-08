@@ -228,53 +228,92 @@ class _KnowledgegraphState extends State<Knowledgegraph>
     );
   }
 
+  // Widget _buildHeader() {
+  //   return Card(
+  //     elevation: 4,
+  //     shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+  //     color: Colors.white,
+  //     child: Padding(
+  //       padding: const EdgeInsets.all(24),
+  //       child: Column(
+  //         crossAxisAlignment: CrossAxisAlignment.start,
+  //         children: [
+  //           Container(
+  //             padding: const EdgeInsets.all(16),
+  //             decoration: BoxDecoration(
+  //               gradient: LinearGradient(
+  //                 colors: [
+  //                   HeritagePalette.canvas,
+  //                   HeritagePalette.forest.withOpacity(0.1),
+  //                 ],
+  //                 begin: Alignment.topLeft,
+  //                 end: Alignment.bottomRight,
+  //               ),
+  //               borderRadius: BorderRadius.circular(12),
+  //             ),
+  //             child: Column(
+  //               crossAxisAlignment: CrossAxisAlignment.start,
+  //               children: [
+  //                 Text(
+  //                   'Ontology-Driven Multimodal Knowledge Graph',
+  //                   style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+  //                     fontWeight: FontWeight.bold,
+  //                     color: HeritagePalette.forest,
+  //                   ),
+  //                 ),
+  //                 const SizedBox(height: 8),
+  //                 Text(
+  //                   'Interactive visualization of the semantic relationships between botanical nodes, artifact nodes, and cultural narrative edges. Click on nodes and edges to explore provenance and cultural context.',
+  //                   style: GoogleFonts.spaceGrotesk(
+  //                     color: HeritagePalette.muted,
+  //                     fontSize: 13,
+  //                     height: 1.4,
+  //                   ),
+  //                 ),
+  //               ],
+  //             ),
+  //           ),
+  //         ],
+  //       ),
+  //     ),
+  //   );
+  // }
+
   Widget _buildHeader() {
-    return Card(
-      elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-      color: Colors.white,
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    HeritagePalette.canvas,
-                    HeritagePalette.forest.withOpacity(0.1),
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(8),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const HeritageTricolorBand(height: 6),
+          Container(
+            color: HeritagePalette.forest,
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Ontology-Driven Multimodal Knowledge Graph',
+                  style: GoogleFonts.spaceGrotesk(
+                    color: HeritagePalette.sun,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                  ),
                 ),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    'Ontology-Driven Multimodal Knowledge Graph',
-                    style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      color: HeritagePalette.forest,
-                    ),
+                const SizedBox(height: 7),
+                Text(
+                  'Interactive visualization of semantic relationships.',
+                  // 'Interactive visualization of the semantic relationships between botanical nodes, artifact nodes, and cultural narrative edges.',
+                  style: GoogleFonts.newsreader(
+                    color: Colors.white,
+                    fontSize: 25,
+                    fontWeight: FontWeight.w700,
                   ),
-                  const SizedBox(height: 8),
-                  Text(
-                    'Interactive visualization of the semantic relationships between botanical nodes, artifact nodes, and cultural narrative edges. Click on nodes and edges to explore provenance and cultural context.',
-                    style: GoogleFonts.spaceGrotesk(
-                      color: HeritagePalette.muted,
-                      fontSize: 13,
-                      height: 1.4,
-                    ),
-                  ),
-                ],
-              ),
+                ),
+              ],
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -787,15 +826,15 @@ class _KnowledgegraphState extends State<Knowledgegraph>
                     ],
                   ),
                 ),
-                const SizedBox(height: 12),
-                Text(
-                  'Each artifact is connected to its heritage site through "collected_at" relationships. Heritage sites with artifacts are also connected through "related_region" relationships.',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Colors.grey.shade600,
-                    height: 1.4,
-                  ),
-                ),
+                // const SizedBox(height: 12),
+                // Text(
+                //   'Each artifact is connected to its heritage site through "collected_at" relationships. Heritage sites with artifacts are also connected through "related_region" relationships.',
+                //   style: TextStyle(
+                //     fontSize: 12,
+                //     color: Colors.grey.shade600,
+                //     height: 1.4,
+                //   ),
+                // ),
               ],
             ),
           ),
