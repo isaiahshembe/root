@@ -6,6 +6,7 @@ import 'package:google_fonts/google_fonts.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:website/src/heritage_theme.dart';
+import 'package:flutter/foundation.dart';
 
 class Vlmidentification extends StatefulWidget {
   const Vlmidentification({super.key});
@@ -15,8 +16,12 @@ class Vlmidentification extends StatefulWidget {
 }
 
 class _VlmidentificationState extends State<Vlmidentification> {
-  static const String _inferenceUrl =
-      'https://proxy-server-8445892d.ahumain.cranecloud.io/predict';
+  // static const String _inferenceUrl =
+  //     'https://proxy-server-8445892d.ahumain.cranecloud.io/predict';
+  // Use relative path on Web to bypass CORS, but keep absolute URL on iOS/Android
+  static const String _inferenceUrl = kIsWeb
+      ? '/api/predict'
+      : 'https://proxy-server-8445892d.ahumain.cranecloud.io/predict';
 
   static const Map<String, String> _questionLabels = {
     'caption': 'Detailed Caption',
@@ -163,7 +168,9 @@ class _VlmidentificationState extends State<Vlmidentification> {
         ),
       );
 
-      final streamedResponse = await request.send().timeout(const Duration(seconds: 120));
+      final streamedResponse = await request.send().timeout(
+        const Duration(seconds: 120),
+      );
       final response = await http.Response.fromStream(streamedResponse);
 
       if (response.statusCode != 200) {
@@ -172,7 +179,9 @@ class _VlmidentificationState extends State<Vlmidentification> {
 
       final decoded = jsonDecode(response.body);
       if (decoded is! Map<String, dynamic> || decoded['success'] != true) {
-        throw const FormatException('Unexpected response or failure status from proxy server.');
+        throw const FormatException(
+          'Unexpected response or failure status from proxy server.',
+        );
       }
 
       // Extract the result text
